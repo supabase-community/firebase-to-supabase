@@ -1,0 +1,15 @@
+{
+  "name": "firestore-to-supabase",
+  "version": "1.0.0",
+  "description": "Migrate firestore data to supabase",
+  "main": "index.ts",
+  "scripts": {
+    "run": "ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mark Burggraf <mark@supabase.io>",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^1.27.0"
+  }
+}
