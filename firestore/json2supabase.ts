@@ -1,10 +1,10 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { keys as supabasekeys } from './supabase-keys';
 import * as fs from 'fs';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
+import { Client } from 'pg';
 
 const args = process.argv.slice(2);
 let filename;
+let client: Client;
 
 if (args.length < 1) {
     console.log('Usage: json2supabase.ts <path_to_json_file>');
@@ -12,15 +12,56 @@ if (args.length < 1) {
 } else {
     filename = args[0];
 }
+let pgCreds;
+try {
+    pgCreds = JSON.parse(fs.readFileSync('./supabase-service.json', 'utf8'));
+    if (typeof pgCreds.user === 'string' &&
+        typeof pgCreds.password === 'string' &&
+        typeof pgCreds.host === 'string' &&
+        typeof pgCreds.port === 'number' &&
+        typeof pgCreds.database === 'string') {} else {
+            console.log('supabase-service.json must contain the following fields:');
+            console.log('   user: string');
+            console.log('   password: string');
+            console.log('   host: string');
+            console.log('   port: number');
+            console.log('   database: string');
+            process.exit(1);
+        }
+} catch (err) {
+    console.log('error reading supabase-service.json', err);
+    process.exit(1);
+}
 
-const supabase: SupabaseClient = createClient(supabasekeys.SUPABASE_URL, supabasekeys.SUPABASE_KEY);
 
 
 async function main(filename: string) {
 
     const fields = await getFields(filename);
     console.log('fields:', JSON.stringify(fields, null, 2));
+    client = new Client({
+        user: pgCreds.user,
+        host: pgCreds.host,
+        database: pgCreds.database,
+        password: pgCreds.password,
+        port: pgCreds.port
+      });
+    await createTable(filename.replace('.json', '').replace('./',''), fields);
+}
 
+async function createTable(tableName: string, fields: any) {
+    client.connect();
+    client.query(`select column_name, data_type, character_maximum_length, column_default, is_nullable
+    from INFORMATION_SCHEMA.COLUMNS where table_name = '${tableName}'`, (err, res) => {
+        if (err) {
+            console.log(err);
+            client.end()
+            process.exit(1);
+        } else {
+            console.log(JSON.stringify(res.rows, null, 2));
+            client.end();
+        }
+      });
 }
 
 async function getFields(filename: string) {
@@ -61,16 +102,16 @@ main(filename);
 function jsToSqlType(type: string) {
     switch (type) {
         case 'string':
-            return 'TEXT';
+            return 'text';
         case 'number':
-            return 'NUMBER';
+            return 'number';
         case 'boolean':
-            return 'BOOLEAN';
+            return 'boolean';
         case 'object':
-            return 'JSON';
+            return 'jsonb';
         case 'array':
-            return 'JSON';
+            return 'jsonb';
         default:
-            return 'TEXT';
+            return 'text';
     }
 }
