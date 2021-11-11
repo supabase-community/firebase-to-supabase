@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 
 const serviceAccount = require("./firebase-service.json");
 
-console.log('databaseURL', `https://${serviceAccount.project_id}.firebaseio.com`);
+// console.log('databaseURL', `https://${serviceAccount.project_id}.firebaseio.com`);
 
 try {
   admin.initializeApp({
