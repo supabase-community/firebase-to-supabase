@@ -2,10 +2,10 @@
 
 ### Command Line Syntax
 #### List all collections
-`ts-node collections.ts`
+`node collections.js`
 
 #### Dump Firestore collection to JSON file
-`ts-node firestore2json.ts <collectionName> [<batchSize>]`
+`node firestore2json.js <collectionName> [<batchSize>]`
 
 * `batchSize` defaults to 1000
 * output filename is `<collectionName>.json`
