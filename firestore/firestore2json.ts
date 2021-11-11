@@ -5,16 +5,16 @@ const args = process.argv.slice(2);
 let db;
 
 if (args.length < 1) {
-    console.log('Usage: firestore2json.ts <collectionName>');
+    console.log('Usage: firestore2json.ts <collectionName> [<batchSize>]');
     process.exit(1);
 } else {
     db = getFirestoreInstance();
-    main(args[0]);
+    main(args[0], args[1] || '1000');
 }
 
-async function main(collectionName: string) {
+async function main(collectionName: string, batchSize: string) {
 
-    getAll(collectionName, 0, 20);
+    getAll(collectionName, 0, parseInt(batchSize));
     
 }
 
