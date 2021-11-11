@@ -10,6 +10,7 @@
   "author": "Mark Burggraf <mark@supabase.io>",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^1.27.0"
+    "@supabase/supabase-js": "^1.27.0",
+    "stream-json": "^1.7.3"
   }
 }
