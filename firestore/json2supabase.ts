@@ -4,6 +4,7 @@ import { Client } from 'pg';
 
 const args = process.argv.slice(2);
 let filename;
+let tableName;
 let client: Client;
 
 if (args.length < 1) {
@@ -38,7 +39,7 @@ try {
 async function main(filename: string) {
 
     const fields = await getFields(filename);
-    console.log('fields:', JSON.stringify(fields, null, 2));
+    // console.log('fields:', JSON.stringify(fields, null, 2));
     client = new Client({
         user: pgCreds.user,
         host: pgCreds.host,
@@ -46,22 +47,66 @@ async function main(filename: string) {
         password: pgCreds.password,
         port: pgCreds.port
       });
-    await createTable(filename.replace('.json', '').replace('./',''), fields);
+    // parse table name from filename / path
+    tableName = filename.replace(/\\/g,'/').split('/').pop().split('.')[0].replace('.json', '');
+    const tableCreationResult = await createTable(tableName, fields);
+    console.log('tableCreationResult:', tableCreationResult);
+    client.end();
 }
 
 async function createTable(tableName: string, fields: any) {
-    client.connect();
-    client.query(`select column_name, data_type, character_maximum_length, column_default, is_nullable
-    from INFORMATION_SCHEMA.COLUMNS where table_name = '${tableName}'`, (err, res) => {
-        if (err) {
-            console.log(err);
-            client.end()
-            process.exit(1);
-        } else {
-            console.log(JSON.stringify(res.rows, null, 2));
-            client.end();
-        }
-      });
+    return new Promise((resolve, reject) => {
+        client.connect();
+        client.query(`select column_name, data_type, character_maximum_length, column_default, is_nullable
+        from INFORMATION_SCHEMA.COLUMNS where table_name = '${tableName}'`, (err, res) => {
+            if (err) {
+                console.log('createTable error:', err);
+                client.end()
+                reject(err);
+                process.exit(1);
+            } else {
+                // console.log(JSON.stringify(res.rows, null, 2));
+                if (res.rows.length > 0) {
+                    for (const attr in fields) {
+                        // get data_type from rows
+                        const dataType = res.rows.find(row => row.column_name === attr).data_type;
+                        if (!dataType) {
+                            console.log(`field not found in ${tableName} table: ${attr}`);
+                            client.end()
+                            reject(`field not found in ${tableName} table: ${attr}`);
+                            process.exit(1);
+                        }
+                        if (dataType !== fields[attr]) {
+                            console.log(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
+                            client.end()
+                            reject(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
+                            process.exit(1);
+                        }
+                    }
+                    resolve('table exists');   
+                } else {
+                    let sql = `create table "${tableName}" (`;
+                    for (const attr in fields) {
+                        sql += `"${attr}" ${fields[attr]}, `;
+                    }
+                    sql = sql.slice(0, -2);
+                    sql += ')';
+                    console.log(sql);
+                    client.query(sql, (err, res) => {
+                        if (err) {
+                            console.log('createTable error:', err);
+                            reject(err);
+                            client.end()
+                            process.exit(1);
+                        } else {
+                            // console.log('table created', JSON.stringify(res, null, 2));
+                            resolve('table created');
+                        }
+                    });
+                }
+            }
+          });    
+    });
 }
 
 async function getFields(filename: string) {
@@ -104,7 +149,7 @@ function jsToSqlType(type: string) {
         case 'string':
             return 'text';
         case 'number':
-            return 'number';
+            return 'numeric';
         case 'boolean':
             return 'boolean';
         case 'object':
