@@ -5,14 +5,24 @@ import { Client } from 'pg';
 const args = process.argv.slice(2);
 let filename;
 let tableName;
+let fields;
 let client: Client;
 
 if (args.length < 1) {
-    console.log('Usage: json2supabase.ts <path_to_json_file>');
+    console.log('Usage: json2supabase.ts <path_to_json_file> [<primary_key_strategy>]');
+    console.log('  path_to_json_file: full local path and filename of .json input file');
+    console.log('  primary_key_strategy:');
+    console.log('    none (no primary key is added');
+    console.log('    serial (id SERIAL PRIMARY KEY) (autoincrementing 2-byte integer)');
+    console.log('    smallserial (id SMALLSERIAL PRIMARY KEY) (autoincrementing 4-byte integer)');
+    console.log('    bigserial (id BIGSERIAL PRIMARY KEY) (autoincrementing 8-byte integer)');
+    console.log('    uuid (id UUID PRIMARY KEY DEFAULT uuid_generate_v4()) (randomly generated uuid)');
+    console.log('    firestore_id (id TEXT PRIMARY KEY) (uses existing firestore_id random text as key)');
     process.exit(1);
 } else {
     filename = args[0];
 }
+const primary_key_strategy = args[1] || 'none';
 let pgCreds;
 try {
     pgCreds = JSON.parse(fs.readFileSync('./supabase-service.json', 'utf8'));
@@ -38,7 +48,7 @@ try {
 
 async function main(filename: string) {
 
-    const fields = await getFields(filename);
+    fields = await getFields(filename);
     // console.log('fields:', JSON.stringify(fields, null, 2));
     client = new Client({
         user: pgCreds.user,
@@ -50,8 +60,12 @@ async function main(filename: string) {
     // parse table name from filename / path
     tableName = filename.replace(/\\/g,'/').split('/').pop().split('.')[0].replace('.json', '');
     const tableCreationResult = await createTable(tableName, fields);
-    console.log('tableCreationResult:', tableCreationResult);
+    const result = await loadData();
+    quit();
+}
+function quit() {
     client.end();
+    process.exit(1);
 }
 
 async function createTable(tableName: string, fields: any) {
@@ -60,10 +74,8 @@ async function createTable(tableName: string, fields: any) {
         client.query(`select column_name, data_type, character_maximum_length, column_default, is_nullable
         from INFORMATION_SCHEMA.COLUMNS where table_name = '${tableName}'`, (err, res) => {
             if (err) {
-                console.log('createTable error:', err);
-                client.end()
+                quit();
                 reject(err);
-                process.exit(1);
             } else {
                 // console.log(JSON.stringify(res.rows, null, 2));
                 if (res.rows.length > 0) {
@@ -72,32 +84,33 @@ async function createTable(tableName: string, fields: any) {
                         const dataType = res.rows.find(row => row.column_name === attr).data_type;
                         if (!dataType) {
                             console.log(`field not found in ${tableName} table: ${attr}`);
-                            client.end()
+                            quit();
                             reject(`field not found in ${tableName} table: ${attr}`);
-                            process.exit(1);
                         }
-                        if (dataType !== fields[attr]) {
+                        // check to see if data_type is correct
+                        if (attr === 'id' ? getKeyType(primary_key_strategy) === dataType : dataType !== fields[attr]) {
                             console.log(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
-                            client.end()
+                            quit();
                             reject(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
-                            process.exit(1);
                         }
                     }
                     resolve('table exists');   
                 } else {
                     let sql = `create table "${tableName}" (`;
+                    if (primary_key_strategy !== 'none') {
+                        sql += `${createPrimaryKey(primary_key_strategy)},`;
+                    }
                     for (const attr in fields) {
                         sql += `"${attr}" ${fields[attr]}, `;
                     }
                     sql = sql.slice(0, -2);
                     sql += ')';
-                    console.log(sql);
                     client.query(sql, (err, res) => {
                         if (err) {
                             console.log('createTable error:', err);
+                            console.log('sql was: ' + sql);
+                            quit();
                             reject(err);
-                            client.end()
-                            process.exit(1);
                         } else {
                             // console.log('table created', JSON.stringify(res, null, 2));
                             resolve('table created');
@@ -113,9 +126,8 @@ async function getFields(filename: string) {
     return new Promise((resolve, reject) => {
         const jsonStream = StreamArray.withParser();
         const fields: any = {};
-    
         //internal Node readable stream option, pipe to stream-json to convert it for us
-        fs.createReadStream(filename).pipe(jsonStream.input);
+        const readStream = fs.createReadStream(filename).pipe(jsonStream.input);
     
         //You'll get json objects here
         //Key is the array-index here
@@ -126,6 +138,7 @@ async function getFields(filename: string) {
                 }
                 if (fields[attr] !== typeof value[attr]) {
                     console.log(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
+                    quit();
                     reject(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
                     // process.exit(1);
                 }
@@ -136,13 +149,89 @@ async function getFields(filename: string) {
             for (const attr in fields) {
                 fields[attr] = jsToSqlType(fields[attr]);
             }
+            readStream.destroy();
+            jsonStream.destroy();
             resolve(fields);
         });
     
     });
 
 }
-main(filename);
+
+async function loadData() {
+    return new Promise((resolve, reject) => {
+        let insertRows = [];
+        const jsonStream = StreamArray.withParser();
+        //internal Node readable stream option, pipe to stream-json to convert it for us
+        fs.createReadStream(filename).pipe(jsonStream.input);
+    
+        //You'll get json objects here
+        //Key is the array-index here
+        jsonStream.on('data', async ({key, value}) => {
+            let sql = `(`;
+
+            for (const attr in fields) {
+                let val = value[attr];
+                if (typeof val === 'object') val = JSON.stringify(val);
+                if (typeof val === 'undefined') {
+                    sql += `${sql.length > 1 ? ',' : ''}null`;
+                } else if (fields[attr] !== 'numeric' && fields[attr] !== 'boolean') {
+                    sql += `${sql.length > 1 ? ',' : ''}'${val.replace(/'/g, "''")}'`;
+                } else {
+                    sql += `${sql.length > 1 ? ',' : ''}${value[attr]}`;
+                }
+            }
+            if (primary_key_strategy === 'firestore_id') {
+                sql += `,'${value.firestore_id}'`;
+            }
+            sql += ')';
+            insertRows.push(sql);
+            if (insertRows.length >= 100) {
+                const result = await runSQL(makeInsertStatement(fields, insertRows));
+                insertRows = [];
+            }
+        });
+
+        jsonStream.on('error', (err) => {
+            console.log('loadData error', err);
+        });
+
+        jsonStream.on('end', async () => {
+            const result = await runSQL(makeInsertStatement(fields, insertRows));
+            resolve('DONE');
+        });
+    
+    });
+
+}
+function makeInsertStatement(fields: any, insertRows: any) {
+    let fieldList = '';
+    for (const attr in fields) {
+        fieldList += `${fieldList.length > 0 ? ',' : ''}"${attr}"`;
+    }
+    if (primary_key_strategy === 'firestore_id') {
+        fieldList += `,"id"`;        
+    }
+
+    let sql = `insert into "${tableName}" (${fieldList}) values ${insertRows.join(',')}`;
+    fs.writeFileSync('temp.sql',sql, 'utf8');
+    return sql;
+}
+
+async function runSQL(sql: string) {
+    return new Promise((resolve, reject) => {
+        // fs.writeFileSync(`temp.sql`, sql, 'utf-8');
+        client.query(sql, (err, res) => {
+            if (err) {
+                console.log('runSQL error:', err);
+                quit();
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        });    
+    });
+}
 
 function jsToSqlType(type: string) {
     switch (type) {
@@ -160,3 +249,41 @@ function jsToSqlType(type: string) {
             return 'text';
     }
 }
+function getKeyType(primary_key_strategy: string) {
+    switch (primary_key_strategy) {
+        case 'none':
+            return '';
+        case 'serial':
+            return 'integer';
+        case 'smallserial':
+            return 'smallint';
+        case 'bigserial':
+            return 'bigint';
+        case 'uuid':
+            return 'uuid';
+        case 'firestore_id':
+            return 'text';
+        default:
+            return '';
+    }
+}
+function createPrimaryKey(primary_key_strategy: string) {
+    switch (primary_key_strategy) {
+        case 'none':
+            return '';
+        case 'serial':
+            return 'id SERIAL PRIMARY KEY';
+        case 'smallserial':
+            return 'id SMALLSERIAL PRIMARY KEY';
+        case 'bigserial':
+            return 'id BIGSERIAL PRIMARY KEY';
+        case 'uuid':
+            return 'id UUID PRIMARY KEY DEFAULT uuid_generate_v4()';
+        case 'firestore_id':
+            return 'id TEXT PRIMARY KEY';
+        default:
+            return '';
+    }
+}
+
+main(filename);

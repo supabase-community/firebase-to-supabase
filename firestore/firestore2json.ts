@@ -40,8 +40,10 @@ async function getBatch(collectionName: string, offset: number, limit: number): 
     .then(snapshot => {
       snapshot.forEach(doc => {
         const item = doc.data();
-        if (!item.id) item.id = doc.id;
-        else item.firestoreId = doc.id;        
+        if (!item.firestore_id) item.firestore_id = doc.id;
+        else if (!item.firestoreid) item.firestoreid = doc.id;   
+        else if (!item.original_id) item.original_id = doc.id;
+        else if (!item.originalid) item.originalid = doc.id;
         fs.appendFileSync(`./${collectionName}.json`, 
             ((offset === 0 && count === 0) ? '[\n' : ',') +
             JSON.stringify(item, null, 2) + '\n', 
