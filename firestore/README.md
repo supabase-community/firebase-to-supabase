@@ -38,7 +38,7 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
 
 #### Import JSON file to Supabase (PostgreSQL)
 
-`json2supabase.ts <path_to_json_file> [<primary_key_strategy>]`
+`node json2supabase.js <path_to_json_file> [<primary_key_strategy>]`
 
 * `<path_to_json_file>` is the full path of the file you created in the previous step (`Dump Firestore collection to JSON file
 `), such as `./my_collection.json`
