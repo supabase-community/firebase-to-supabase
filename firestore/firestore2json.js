@@ -93,10 +93,14 @@ function getBatch(collectionName, offset, limit) {
                             .then(function (snapshot) {
                             snapshot.forEach(function (doc) {
                                 var item = doc.data();
-                                if (!item.id)
-                                    item.id = doc.id;
-                                else
-                                    item.firestoreId = doc.id;
+                                if (!item.firestore_id)
+                                    item.firestore_id = doc.id;
+                                else if (!item.firestoreid)
+                                    item.firestoreid = doc.id;
+                                else if (!item.original_id)
+                                    item.original_id = doc.id;
+                                else if (!item.originalid)
+                                    item.originalid = doc.id;
                                 fs.appendFileSync("./" + collectionName + ".json", ((offset === 0 && count === 0) ? '[\n' : ',') +
                                     JSON.stringify(item, null, 2) + '\n', 'utf8');
                                 data.push(item);
