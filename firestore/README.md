@@ -1,5 +1,9 @@
 # Firebase to Supabase: Firestore Data Migration
 
+This module automates the process of converting data from a Firebase Firestore database to a Supabase PostgreSQL database.  It copies the entire contents of a single Firestore `collection` to a single PostgreSQL `table`.
+
+The Firestore `collection` is "flattened", and converted to a table with basic columns of one of the following types: `text`, `numeric`, `boolean`, or `jsonb`.  If your structure is more complex, you can write a program to split the newly-created `json` file into multiple, related tables before you import your `json` file(s) to Supabase.
+
 ### Configuration
 
 #### Download your `firebase-service.json` file from the Firebase Console
