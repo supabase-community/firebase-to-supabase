@@ -1,6 +1,6 @@
-firestore/firebase-service.json
-firestore/supabase.ts
-firestore/node_modules/
-firestore/supabase-keys.ts
-firestore/supabase-service.json
+firebase-service.json
+users.json
+supabase.ts
 node_modules/
+supabase-keys.ts
+supabase-service.json
