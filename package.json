@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "firebase-admin": "^10.0.0"
+    "firebase-admin": "^10.0.0",
+    "firebase-scrypt": "^2.1.0"
   }
 }
