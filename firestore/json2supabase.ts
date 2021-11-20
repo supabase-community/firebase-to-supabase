@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import * as StreamArray from 'stream-json/streamers/StreamArray';
 import { Client } from 'pg';
+import * as StreamArray from 'stream-json/streamers/StreamArray';
 
 const args = process.argv.slice(2);
 let filename;
@@ -72,7 +72,7 @@ async function createTable(tableName: string, fields: any) {
     return new Promise((resolve, reject) => {
         client.connect();
         client.query(`select column_name, data_type, character_maximum_length, column_default, is_nullable
-        from INFORMATION_SCHEMA.COLUMNS where table_name = '${tableName}'`, (err, res) => {
+        from INFORMATION_SCHEMA.COLUMNS where table_schema = 'public' and table_name = '${tableName}'`, (err, res) => {
             if (err) {
                 quit();
                 reject(err);
@@ -81,7 +81,7 @@ async function createTable(tableName: string, fields: any) {
                 if (res.rows.length > 0) {
                     for (const attr in fields) {
                         // get data_type from rows
-                        const dataType = res.rows.find(row => row.column_name === attr).data_type;
+                        const dataType = res.rows.find(row => row.column_name === attr)?.data_type;
                         if (!dataType) {
                             console.log(`field not found in ${tableName} table: ${attr}`);
                             quit();
@@ -107,8 +107,13 @@ async function createTable(tableName: string, fields: any) {
                     sql += ')';
                     client.query(sql, (err, res) => {
                         if (err) {
-                            console.log('createTable error:', err);
-                            console.log('sql was: ' + sql);
+                            if (err.toString() === ('error: column "id" specified more than once')) {
+                                console.log('column "id" specified more than once');
+                                quit();
+                            } else {
+                                console.log('createTable error:', err);
+                                console.log('sql was: ' + sql);    
+                            }
                             quit();
                             reject(err);
                         } else {
@@ -136,10 +141,12 @@ async function getFields(filename: string) {
                 if (!fields[attr]) {
                     fields[attr] = typeof value[attr];
                 }
-                if (fields[attr] !== typeof value[attr]) {
+                if ((fields[attr] !== typeof value[attr]) && fields[attr] !== 'object') {
                     console.log(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
-                    quit();
-                    reject(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
+                    console.log(`casting ${attr} to type object (JSONB)`);
+                    fields[attr] = 'object';
+                    // quit();
+                    // reject(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
                     // process.exit(1);
                 }
             }
