@@ -182,7 +182,7 @@ async function loadData() {
 
             for (const attr in fields) {
                 let val = value[attr];
-                if (typeof val === 'object') val = JSON.stringify(val);
+                if (typeof val === 'object' || fields[attr] === 'jsonb') val = JSON.stringify(val);
                 if (typeof val === 'undefined') {
                     sql += `${sql.length > 1 ? ',' : ''}null`;
                 } else if (fields[attr] !== 'numeric' && fields[attr] !== 'boolean') {
@@ -196,7 +196,7 @@ async function loadData() {
             }
             sql += ')';
             insertRows.push(sql);
-            if (insertRows.length >= 100) {
+            if (insertRows.length >= 100) { // BATCH_SIZE
                 const result = await runSQL(makeInsertStatement(fields, insertRows));
                 insertRows = [];
             }
@@ -234,6 +234,7 @@ async function runSQL(sql: string) {
         client.query(sql, (err, res) => {
             if (err) {
                 console.log('runSQL error:', err);
+                console.log('sql was: ' + sql);
                 quit();
                 reject(err);
             } else {
