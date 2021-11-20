@@ -147,7 +147,7 @@ async function getFields(filename: string) {
                 if (!fields[attr]) {
                     fields[attr] = typeof value[attr];
                 }
-                if ((fields[attr] !== typeof value[attr]) && fields[attr] !== 'object') {
+                if ((fields[attr] !== typeof value[attr]) && fields[attr] !== 'object' && value[attr] !== null) {
                     console.log(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
                     console.log(`casting ${attr} to type object (JSONB)`);
                     fields[attr] = 'object';
