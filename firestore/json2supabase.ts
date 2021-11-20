@@ -9,20 +9,23 @@ let fields;
 let client: Client;
 
 if (args.length < 1) {
-    console.log('Usage: json2supabase.ts <path_to_json_file> [<primary_key_strategy>]');
+    console.log('Usage: json2supabase.ts <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]');
     console.log('  path_to_json_file: full local path and filename of .json input file');
-    console.log('  primary_key_strategy:');
+    console.log('  primary_key_strategy (optional):');
     console.log('    none (no primary key is added');
     console.log('    serial (id SERIAL PRIMARY KEY) (autoincrementing 2-byte integer)');
     console.log('    smallserial (id SMALLSERIAL PRIMARY KEY) (autoincrementing 4-byte integer)');
     console.log('    bigserial (id BIGSERIAL PRIMARY KEY) (autoincrementing 8-byte integer)');
     console.log('    uuid (id UUID PRIMARY KEY DEFAULT uuid_generate_v4()) (randomly generated uuid)');
     console.log('    firestore_id (id TEXT PRIMARY KEY) (uses existing firestore_id random text as key)');
+    console.log('  primary_key_name (optional): name of primary key (defaults to "id")');
     process.exit(1);
 } else {
     filename = args[0];
 }
 const primary_key_strategy = args[1] || 'none';
+const primary_key_name = args[2] || 'id';
+
 let pgCreds;
 try {
     pgCreds = JSON.parse(fs.readFileSync('./supabase-service.json', 'utf8'));
@@ -88,7 +91,7 @@ async function createTable(tableName: string, fields: any) {
                             reject(`field not found in ${tableName} table: ${attr}`);
                         }
                         // check to see if data_type is correct
-                        if (attr === 'id' ? getKeyType(primary_key_strategy) === dataType : dataType !== fields[attr]) {
+                        if (attr === primary_key_name ? getKeyType(primary_key_strategy) === dataType : dataType !== fields[attr]) {
                             console.log(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
                             quit();
                             reject(`data type mismatch for field ${attr}: ${dataType}, ${fields[attr]}`);
@@ -108,7 +111,7 @@ async function createTable(tableName: string, fields: any) {
                     client.query(sql, (err, res) => {
                         if (err) {
                             if (err.toString() === ('error: column "id" specified more than once')) {
-                                console.log('column "id" specified more than once');
+                                console.log('column "id" specified more than once: try specifying a different <primary_key_name>');
                                 quit();
                             } else {
                                 console.log('createTable error:', err);
@@ -217,7 +220,7 @@ function makeInsertStatement(fields: any, insertRows: any) {
         fieldList += `${fieldList.length > 0 ? ',' : ''}"${attr}"`;
     }
     if (primary_key_strategy === 'firestore_id') {
-        fieldList += `,"id"`;        
+        fieldList += `,${primary_key_name}`;        
     }
 
     let sql = `insert into "${tableName}" (${fieldList}) values ${insertRows.join(',')}`;
@@ -279,15 +282,15 @@ function createPrimaryKey(primary_key_strategy: string) {
         case 'none':
             return '';
         case 'serial':
-            return 'id SERIAL PRIMARY KEY';
+            return `"${primary_key_name}" SERIAL PRIMARY KEY`;
         case 'smallserial':
-            return 'id SMALLSERIAL PRIMARY KEY';
+            return `"${primary_key_name}" SMALLSERIAL PRIMARY KEY`;
         case 'bigserial':
-            return 'id BIGSERIAL PRIMARY KEY';
+            return `"${primary_key_name}" BIGSERIAL PRIMARY KEY`;
         case 'uuid':
-            return 'id UUID PRIMARY KEY DEFAULT uuid_generate_v4()';
+            return `"${primary_key_name}" UUID PRIMARY KEY DEFAULT uuid_generate_v4()`;
         case 'firestore_id':
-            return 'id TEXT PRIMARY KEY';
+            return `"${primary_key_name}" TEXT PRIMARY KEY`;
         default:
             return '';
     }
