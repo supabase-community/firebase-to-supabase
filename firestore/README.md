@@ -38,7 +38,7 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
 
 #### Import JSON file to Supabase (PostgreSQL)
 
-`node json2supabase.js <path_to_json_file> [<primary_key_strategy>]`
+`node json2supabase.js <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]`
 
 * `<path_to_json_file>` is the full path of the file you created in the previous step (`Dump Firestore collection to JSON file
 `), such as `./my_collection.json`
@@ -49,3 +49,4 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
     * `bigserial` creates a key using `(id BIGSERIAL PRIMARY KEY)` (autoincrementing 8-byte integer)
     * `uuid` creates a key using `(id UUID PRIMARY KEY DEFAULT uuid_generate_v4())` (randomly generated uuid)
     * `firestore_id` creates a key using `(id TEXT PRIMARY KEY)` (uses existing firestore_id random text as key)
+* `[<primary_key_name>]` (optional): name of primary key (defaults to "id")
