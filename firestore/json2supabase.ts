@@ -9,7 +9,7 @@ let fields;
 let client: Client;
 
 if (args.length < 1) {
-    console.log('Usage: json2supabase.ts <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]');
+    console.log('Usage: node json2supabase.js <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]');
     console.log('  path_to_json_file: full local path and filename of .json input file');
     console.log('  primary_key_strategy (optional):');
     console.log('    none (no primary key is added');
@@ -50,7 +50,7 @@ try {
 
 
 async function main(filename: string) {
-
+    console.log(`analyzing fields in ${filename}`);
     fields = await getFields(filename);
     // console.log('fields:', JSON.stringify(fields, null, 2));
     client = new Client({
@@ -62,8 +62,11 @@ async function main(filename: string) {
       });
     // parse table name from filename / path
     tableName = filename.replace(/\\/g,'/').split('/').pop().split('.')[0].replace('.json', '');
+    console.log(`creating destination table for ${filename}`);
     const tableCreationResult = await createTable(tableName, fields);
+    console.log(`loading data for ${filename}`);
     const result = await loadData();
+    console.log(`done processing ${filename}`);
     quit();
 }
 function quit() {
@@ -110,8 +113,8 @@ async function createTable(tableName: string, fields: any) {
                     sql += ')';
                     client.query(sql, (err, res) => {
                         if (err) {
-                            if (err.toString() === ('error: column "id" specified more than once')) {
-                                console.log('column "id" specified more than once: try specifying a different <primary_key_name>');
+                            if (err.toString().endsWith('specified more than once')) {
+                                console.log(err.toString() + ': try specifying a different <primary_key_name>');
                                 quit();
                             } else {
                                 console.log('createTable error:', err);
