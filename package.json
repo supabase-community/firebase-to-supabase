@@ -1,6 +1,19 @@
 {
+  "name": "firebase-to-supabase",
+  "version": "1.0.0",
+  "description": "Migrate a firebase project to supabase project",
+  "main": "index.ts",
+  "scripts": {
+    "run": "ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mark Burggraf <mark@supabase.io>",
+  "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^1.27.0",
     "firebase-admin": "^10.0.0",
-    "firebase-scrypt": "^2.1.0"
+    "firebase-scrypt": "^2.1.0",
+    "pg": "^8.7.1",
+    "stream-json": "^1.7.3"
   }
 }
