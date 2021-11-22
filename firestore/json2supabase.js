@@ -37,29 +37,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 var fs = require("fs");
-var StreamArray = require("stream-json/streamers/StreamArray");
 var pg_1 = require("pg");
+var StreamArray = require("stream-json/streamers/StreamArray");
 var args = process.argv.slice(2);
 var filename;
 var tableName;
 var fields;
 var client;
 if (args.length < 1) {
-    console.log('Usage: json2supabase.ts <path_to_json_file> [<primary_key_strategy>]');
+    console.log('Usage: node json2supabase.js <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]');
     console.log('  path_to_json_file: full local path and filename of .json input file');
-    console.log('  primary_key_strategy:');
+    console.log('  primary_key_strategy (optional):');
     console.log('    none (no primary key is added');
     console.log('    serial (id SERIAL PRIMARY KEY) (autoincrementing 2-byte integer)');
     console.log('    smallserial (id SMALLSERIAL PRIMARY KEY) (autoincrementing 4-byte integer)');
     console.log('    bigserial (id BIGSERIAL PRIMARY KEY) (autoincrementing 8-byte integer)');
     console.log('    uuid (id UUID PRIMARY KEY DEFAULT uuid_generate_v4()) (randomly generated uuid)');
     console.log('    firestore_id (id TEXT PRIMARY KEY) (uses existing firestore_id random text as key)');
+    console.log('  primary_key_name (optional): name of primary key (defaults to "id")');
     process.exit(1);
 }
 else {
     filename = args[0];
 }
 var primary_key_strategy = args[1] || 'none';
+var primary_key_name = args[2] || 'id';
 var pgCreds;
 try {
     pgCreds = JSON.parse(fs.readFileSync('./supabase-service.json', 'utf8'));
@@ -87,7 +89,9 @@ function main(filename) {
         var tableCreationResult, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, getFields(filename)];
+                case 0:
+                    console.log("analyzing fields in " + filename);
+                    return [4 /*yield*/, getFields(filename)];
                 case 1:
                     fields = _a.sent();
                     // console.log('fields:', JSON.stringify(fields, null, 2));
@@ -100,12 +104,15 @@ function main(filename) {
                     });
                     // parse table name from filename / path
                     tableName = filename.replace(/\\/g, '/').split('/').pop().split('.')[0].replace('.json', '');
+                    console.log("creating destination table for " + filename);
                     return [4 /*yield*/, createTable(tableName, fields)];
                 case 2:
                     tableCreationResult = _a.sent();
+                    console.log("loading data for " + filename);
                     return [4 /*yield*/, loadData()];
                 case 3:
                     result = _a.sent();
+                    console.log("done processing " + filename);
                     quit();
                     return [2 /*return*/];
             }
@@ -121,7 +128,8 @@ function createTable(tableName, fields) {
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) {
                     client.connect();
-                    client.query("select column_name, data_type, character_maximum_length, column_default, is_nullable\n        from INFORMATION_SCHEMA.COLUMNS where table_name = '" + tableName + "'", function (err, res) {
+                    client.query("select column_name, data_type, character_maximum_length, column_default, is_nullable\n        from INFORMATION_SCHEMA.COLUMNS where table_schema = 'public' and table_name = '" + tableName + "'", function (err, res) {
+                        var _a;
                         if (err) {
                             quit();
                             reject(err);
@@ -131,14 +139,14 @@ function createTable(tableName, fields) {
                             if (res.rows.length > 0) {
                                 var _loop_1 = function (attr) {
                                     // get data_type from rows
-                                    var dataType = res.rows.find(function (row) { return row.column_name === attr; }).data_type;
+                                    var dataType = (_a = res.rows.find(function (row) { return row.column_name === attr; })) === null || _a === void 0 ? void 0 : _a.data_type;
                                     if (!dataType) {
                                         console.log("field not found in " + tableName + " table: " + attr);
                                         quit();
                                         reject("field not found in " + tableName + " table: " + attr);
                                     }
                                     // check to see if data_type is correct
-                                    if (attr === 'id' ? getKeyType(primary_key_strategy) === dataType : dataType !== fields[attr]) {
+                                    if (attr === primary_key_name ? getKeyType(primary_key_strategy) === dataType : dataType !== fields[attr]) {
                                         console.log("data type mismatch for field " + attr + ": " + dataType + ", " + fields[attr]);
                                         quit();
                                         reject("data type mismatch for field " + attr + ": " + dataType + ", " + fields[attr]);
@@ -161,8 +169,14 @@ function createTable(tableName, fields) {
                                 sql_1 += ')';
                                 client.query(sql_1, function (err, res) {
                                     if (err) {
-                                        console.log('createTable error:', err);
-                                        console.log('sql was: ' + sql_1);
+                                        if (err.toString().endsWith('specified more than once')) {
+                                            console.log(err.toString() + ': try specifying a different <primary_key_name>');
+                                            quit();
+                                        }
+                                        else {
+                                            console.log('createTable error:', err);
+                                            console.log('sql was: ' + sql_1);
+                                        }
                                         quit();
                                         reject(err);
                                     }
@@ -194,10 +208,12 @@ function getFields(filename) {
                             if (!fields[attr]) {
                                 fields[attr] = typeof value[attr];
                             }
-                            if (fields[attr] !== typeof value[attr]) {
+                            if ((fields[attr] !== typeof value[attr]) && fields[attr] !== 'object' && value[attr] !== null) {
                                 console.log("multiple field types found for field " + attr + ": " + fields[attr] + ", " + typeof value[attr]);
-                                quit();
-                                reject("multiple field types found for field " + attr + ": " + fields[attr] + ", " + typeof value[attr]);
+                                console.log("casting " + attr + " to type object (JSONB)");
+                                fields[attr] = 'object';
+                                // quit();
+                                // reject(`multiple field types found for field ${attr}: ${fields[attr]}, ${typeof value[attr]}`);
                                 // process.exit(1);
                             }
                         }
@@ -235,7 +251,7 @@ function loadData() {
                                         sql = "(";
                                         for (attr in fields) {
                                             val = value[attr];
-                                            if (typeof val === 'object')
+                                            if (typeof val === 'object' || fields[attr] === 'jsonb')
                                                 val = JSON.stringify(val);
                                             if (typeof val === 'undefined') {
                                                 sql += (sql.length > 1 ? ',' : '') + "null";
@@ -288,7 +304,7 @@ function makeInsertStatement(fields, insertRows) {
         fieldList += (fieldList.length > 0 ? ',' : '') + "\"" + attr + "\"";
     }
     if (primary_key_strategy === 'firestore_id') {
-        fieldList += ",\"id\"";
+        fieldList += "," + primary_key_name;
     }
     var sql = "insert into \"" + tableName + "\" (" + fieldList + ") values " + insertRows.join(',');
     fs.writeFileSync('temp.sql', sql, 'utf8');
@@ -302,6 +318,7 @@ function runSQL(sql) {
                     client.query(sql, function (err, res) {
                         if (err) {
                             console.log('runSQL error:', err);
+                            console.log('sql was: ' + sql);
                             quit();
                             reject(err);
                         }
@@ -352,15 +369,15 @@ function createPrimaryKey(primary_key_strategy) {
         case 'none':
             return '';
         case 'serial':
-            return 'id SERIAL PRIMARY KEY';
+            return "\"" + primary_key_name + "\" SERIAL PRIMARY KEY";
         case 'smallserial':
-            return 'id SMALLSERIAL PRIMARY KEY';
+            return "\"" + primary_key_name + "\" SMALLSERIAL PRIMARY KEY";
         case 'bigserial':
-            return 'id BIGSERIAL PRIMARY KEY';
+            return "\"" + primary_key_name + "\" BIGSERIAL PRIMARY KEY";
         case 'uuid':
-            return 'id UUID PRIMARY KEY DEFAULT uuid_generate_v4()';
+            return "\"" + primary_key_name + "\" UUID PRIMARY KEY DEFAULT uuid_generate_v4()";
         case 'firestore_id':
-            return 'id TEXT PRIMARY KEY';
+            return "\"" + primary_key_name + "\" TEXT PRIMARY KEY";
         default:
             return '';
     }
