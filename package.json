@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^1.27.0",
     "firebase-admin": "^10.0.0",
     "firebase-scrypt": "^2.1.0",
+    "moment": "^2.29.1",
     "pg": "^8.7.1",
     "stream-json": "^1.7.3"
   }
