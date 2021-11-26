@@ -5,3 +5,6 @@ node_modules/
 supabase-keys.ts
 supabase-service.json
 __*
+fly.toml
+local.env.sh
+
