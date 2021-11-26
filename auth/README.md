@@ -36,8 +36,6 @@ This module automates the process of converting auth users from a Firebase proje
 
 
 ### Command Line Syntax
-#### List all Firestore collections
-`node collections.js`
 
 #### Dump Firestore users to a JSON file
 `node firestoreusers2json.js [<filename.json>] [<batch_size>]`
