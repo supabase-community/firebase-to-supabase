@@ -40,7 +40,6 @@ exports.__esModule = true;
 var fs = require("fs");
 var admin = require("firebase-admin");
 var serviceAccount = require("./firebase-service.json");
-// console.log('databaseURL', `https://${serviceAccount.project_id}.firebaseio.com`);
 try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
@@ -51,19 +50,20 @@ catch (e) { }
 var args = process.argv.slice(2);
 //let db;
 if (args.length < 0) {
-    console.log('Usage: node firestoreusers2json.js');
+    console.log('Usage: node firestoreusers2json.js [<filename.json>] [<batch_size>]');
+    console.log('   <filename.json>: (optional) output filename (defaults to ./users.json');
+    console.log('   <batch_size>: (optional) number of users to fetch at a time (defaults to 100)');
     process.exit(1);
 }
 else {
-    //db = getFirestoreInstance();
-    //main(args[0], args[1] || '1000');
     main();
 }
-//async function main(collectionName: string, batchSize: string) {
+var filename = args[0] || './users.json';
+var batch_size = args[1] || '100';
 function main() {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            fs.writeFileSync('users.json', '[', 'utf-8');
+            fs.writeFileSync(filename, '[', 'utf-8');
             listUsers();
             return [2 /*return*/];
         });
@@ -73,18 +73,18 @@ var count = 0;
 function listUsers(nextPageToken) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            admin.auth().listUsers(100, nextPageToken)
+            admin.auth().listUsers(parseInt(batch_size), nextPageToken)
                 .then(function (usersFound) {
                 var users = usersFound.users;
                 users.forEach(function (user) {
-                    fs.appendFileSync('users.json', (count > 0 ? ',' : '') + JSON.stringify(user, null, 2), 'utf-8');
+                    fs.appendFileSync(filename, (count > 0 ? ',' : '') + JSON.stringify(user, null, 2), 'utf-8');
                     count++;
                 });
                 if (usersFound.pageToken) {
                     listUsers(usersFound.pageToken);
                 }
                 else {
-                    fs.appendFileSync('users.json', ']\n', 'utf-8');
+                    fs.appendFileSync(filename, ']\n', 'utf-8');
                 }
             })["catch"](function (err) {
                 console.log('ERROR in listUsers', JSON.stringify(err));
