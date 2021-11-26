@@ -4,3 +4,4 @@ supabase.ts
 node_modules/
 supabase-keys.ts
 supabase-service.json
+__*
