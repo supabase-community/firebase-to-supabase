@@ -8,11 +8,17 @@ let filename;
 let client: Client;
 
 if (args.length < 1) {
-    console.log('Usage: node import_users.js <path_to_json_file>');
+    console.log('Usage: node import_users.js <path_to_json_file> [<batch_size>]');
     console.log('  path_to_json_file: full local path and filename of .json input file (of users)');
+    console.log('  batch_size: number of users to process in a batch (defaults to 100)');
     process.exit(1);
 } else {
     filename = args[0];
+}
+const BATCH_SIZE = parseInt(args[1],10) || 100;
+if (!BATCH_SIZE || typeof BATCH_SIZE !== 'number' || BATCH_SIZE < 1) {
+    console.log('invalid batch_size');
+    process.exit(1);
 }
 
 let pgCreds;
@@ -68,7 +74,7 @@ async function loadUsers(filename: string): Promise<any> {
         const pipeline = chain([
           fs.createReadStream(filename),
           StreamArray.withParser(),
-          new Batch({batchSize: 10})
+          new Batch({batchSize: BATCH_SIZE})
         ]);
         
         // count all odd values from a huge array
