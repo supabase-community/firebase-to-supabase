@@ -1,0 +1,7 @@
+{
+    "host": "database.server.com",
+    "password": "secretpassword",
+    "user": "postgres",
+    "database": "postgres",
+    "port": 5432
+}
