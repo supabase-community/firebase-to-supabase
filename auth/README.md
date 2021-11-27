@@ -34,6 +34,53 @@ This module automates the process of converting auth users from a Firebase proje
     * enter the password you used when you created your Supabase project in the `password` entry in the `supabase-service.json` file
     * save the `supabase-service.json` file
 
+#### Save your Firebase Password Hash Parameters
+* log into your Firebase Console
+* open your project
+* select `Authentication` in the menu on the left
+* select `Users` at the top bar
+* click the 3 dots context menu button at the top right corner of the users list
+* click `Password hash parameters` from the context menu
+* copy and save your parameters for `base64_signer_key`, `base64_salt_separator`, `rounds`, and `mem_cost`
+
+Sample `Password hash parameters`:
+```
+hash_config {
+  algorithm: SCRYPT,
+  base64_signer_key: XXXX/XXX+XXXXXXXXXXXXXXXXX+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==,
+  base64_salt_separator: Aa==,
+  rounds: 8,
+  mem_cost: 14,
+}
+```
+
+#### Set your Hash Parameters
+Now that you have your 4 hash parameters, you can set them up in your environment(s):
+##### For a local development server (or hosting your own `NodeJS` server):
+* copy the file `local.env.sh.sample` to `local.env.sh`
+* edit the `MEMCOST`, `ROUNDS`, `SALTSEPARATOR`, and `SIGNERKEY` environment variables you obtained in the previous step
+
+Sample `local.env.sh` file:
+```
+export PORT=3000
+export MEMCOST=14
+export ROUNDS=8
+export SALTSEPARATOR=Aa== 
+export SIGNERKEY=XXXX/XXX+XXXXXXXXXXXXXXXXX+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==
+```
+##### For hosting globally using [fly.io](https://fly.io):
+* copy the `fly.toml.sample` file to `fly.toml`
+* edit the `[env]` section of the `fly.toml` to match the values you obtained in the previous step for `MEMCOST`, `ROUNDS`, `SALTSEPARATOR`, and `SIGNERKEY`
+
+Sample `[env]` section for the `fly.toml` file:
+```
+[env]
+  PORT = "8080"
+  MEMCOST = 14
+  ROUNDS = 8
+  SALTSEPARATOR = "Aa==" 
+  SIGNERKEY = "XXXX/XXX+XXXXXXXXXXXXXXXXX+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=="
+```
 
 ### Command Line Syntax
 
@@ -47,4 +94,21 @@ This module automates the process of converting auth users from a Firebase proje
 `node import_users.js <path_to_json_file> [<batch_size>]`
 * `path_to_json_file`: full local path and filename of .json input file (of users)
 * `batch_size`: (optional) number of users to process in a batch (defaults to 100)
+
+#### Hosting the Middleware
+##### Local hosting for testing (or for running your own server using `NodeJS`):
+* make sure you've set up `local.env.sh` as described above
+* run `node local.sh`
+The `local.sh` file does two things:
+```sh
+source ./local.env.sh # sets environment variables stored in ./local.env.sh
+node server.js # runs the node-based server on the port listed in local.env.sh (defaults to 3000)
+```
+##### Deploying with [fly.io](https://fly.io)
+* make sure you have the [flyctl command line](https://fly.io/docs/getting-started/installing-flyctl/) installed
+* configure your `fly.toml` file as described above
+* [log or sign up with fly.io](https://fly.io/docs/getting-started/login-to-fly/)
+* launch the `fly` app: `flyctl launch`
+* deploy the `fly` app: `flyctl deploy`
+* see [Build, Deploy and Run a Node Application](https://fly.io/docs/getting-started/node/) for further details
 
