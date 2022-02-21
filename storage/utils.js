@@ -1,10 +1,8 @@
 "use strict";
 exports.__esModule = true;
 exports.getStorageInstance = exports.getBucketName = void 0;
-//import { getStorage, listAll, ref } from "@firebase/storage";
 var admin = require("firebase-admin");
 var serviceAccount = require("./firebase-service.json");
-// console.log('databaseURL', `https://${serviceAccount.project_id}.firebaseio.com`);
 try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
