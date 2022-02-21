@@ -1,5 +1,4 @@
 "use strict";
-//import { getBucketName, getStorageInstance } from "@firebase/storage";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -42,20 +41,60 @@ var args = process.argv.slice(2);
 if (args.length < 1) {
     console.log('Usage: files.ts <prefix> [<batchSize>]');
     console.log('       to process the root bucket use prefix ""');
+    console.log('       batchSize is optional, default is 100');
     process.exit(1);
 }
 var prefix = args[0];
+var batchSize = args[1] || '100';
+// GetFilesOptions: 
+// https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
+//
+var storage = (0, utils_1.getStorageInstance)();
+function getBatch(query) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, files, queryForNextPage, c;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0: return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
+                        .getFiles(query)];
+                case 1:
+                    _a = _b.sent(), files = _a[0], queryForNextPage = _a[1];
+                    c = 0;
+                    files.forEach(function (file) {
+                        console.log("***** ", file.name);
+                        c++;
+                    });
+                    console.log('***** ', c, ' files found');
+                    if (queryForNextPage) {
+                        getBatch(queryForNextPage);
+                    }
+                    else {
+                        console.log('no more files to process..');
+                    }
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var storage;
+        var batch, startQuery;
         return __generator(this, function (_a) {
-            storage = (0, utils_1.getStorageInstance)();
-            storage.bucket((0, utils_1.getBucketName)()).getFiles({ prefix: prefix }).then(function (data) {
-                var files = data[0];
-                files.forEach(function (file) {
-                    console.log("***** ", file.name);
-                });
-            });
+            batch = 100;
+            try {
+                if (batchSize) {
+                    batch = parseInt(batchSize);
+                }
+            }
+            catch (e) {
+                batch = 100;
+            }
+            startQuery = {
+                prefix: prefix,
+                autoPaginate: false,
+                maxResults: batch
+            };
+            getBatch(startQuery);
             return [2 /*return*/];
         });
     });
