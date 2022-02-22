@@ -94,73 +94,62 @@ catch (err) {
     process.exit(1);
 }
 var storage = (0, utils_1.getStorageInstance)();
-function getBatch(query) {
+function processBatch(fileSet, queryForNextPage) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, files, queryForNextPage, c;
+        var file, _a, err, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
-                        .getFiles(query)];
-                case 1:
-                    _a = _b.sent(), files = _a[0], queryForNextPage = _a[1];
-                    c = 0;
-                    files.forEach(function (file) {
-                        return __awaiter(this, void 0, void 0, function () {
-                            var _a, err, err_1;
-                            return __generator(this, function (_b) {
-                                switch (_b.label) {
-                                    case 0:
-                                        if (!!file.name.endsWith('/')) return [3 /*break*/, 11];
-                                        count++;
-                                        c++;
-                                        _a = mode;
-                                        switch (_a) {
-                                            case 'single': return [3 /*break*/, 1];
-                                            case 'batch': return [3 /*break*/, 2];
-                                            case 'download': return [3 /*break*/, 3];
-                                            case 'upload': return [3 /*break*/, 7];
-                                            case 'count': return [3 /*break*/, 8];
-                                            case 'list': return [3 /*break*/, 9];
-                                        }
-                                        return [3 /*break*/, 10];
-                                    case 1: return [3 /*break*/, 11];
-                                    case 2: return [3 /*break*/, 11];
-                                    case 3:
-                                        _b.trys.push([3, 5, , 6]);
-                                        console.log('downloading: ', file.name);
-                                        return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
-                                                .file(file.name)
-                                                .download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
-                                    case 4:
-                                        err = (_b.sent())[0];
-                                        if (err) {
-                                            console.error('Error downloading file', err);
-                                        }
-                                        else {
-                                            downloaded++;
-                                        }
-                                        console.log('download complete');
-                                        return [3 /*break*/, 6];
-                                    case 5:
-                                        err_1 = _b.sent();
-                                        console.log('err', err_1);
-                                        return [3 /*break*/, 6];
-                                    case 6: return [3 /*break*/, 11];
-                                    case 7: return [3 /*break*/, 11];
-                                    case 8: return [3 /*break*/, 11];
-                                    case 9:
-                                        console.log(file.name);
-                                        return [3 /*break*/, 11];
-                                    case 10:
-                                        console.log('unknown mode: ', mode);
-                                        process.exit(1);
-                                        _b.label = 11;
-                                    case 11: return [2 /*return*/];
-                                }
-                            });
-                        });
-                    });
-                    // console.log('***** ', c, ' files in batch')
+                case 0:
+                    if (!(fileSet.length > 0)) return [3 /*break*/, 12];
+                    file = fileSet.shift();
+                    _a = mode;
+                    switch (_a) {
+                        case 'single': return [3 /*break*/, 1];
+                        case 'batch': return [3 /*break*/, 2];
+                        case 'download': return [3 /*break*/, 3];
+                        case 'upload': return [3 /*break*/, 7];
+                        case 'count': return [3 /*break*/, 8];
+                        case 'list': return [3 /*break*/, 9];
+                    }
+                    return [3 /*break*/, 10];
+                case 1: return [3 /*break*/, 11];
+                case 2: return [3 /*break*/, 11];
+                case 3:
+                    _b.trys.push([3, 5, , 6]);
+                    console.log('downloading: ', file.name);
+                    return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
+                            .file(file.name)
+                            .download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
+                case 4:
+                    err = (_b.sent())[0];
+                    if (err) {
+                        console.error('Error downloading file', err);
+                    }
+                    else {
+                        downloaded++;
+                    }
+                    //console.log('download complete'); 
+                    processBatch(fileSet, queryForNextPage);
+                    return [3 /*break*/, 6];
+                case 5:
+                    err_1 = _b.sent();
+                    console.log('err', err_1);
+                    return [3 /*break*/, 6];
+                case 6: return [3 /*break*/, 11];
+                case 7: return [3 /*break*/, 11];
+                case 8:
+                    processBatch(fileSet, queryForNextPage);
+                    return [3 /*break*/, 11];
+                case 9:
+                    console.log(file.name);
+                    processBatch(fileSet, queryForNextPage);
+                    return [3 /*break*/, 11];
+                case 10:
+                    console.log('unknown mode: ', mode);
+                    process.exit(1);
+                    _b.label = 11;
+                case 11: return [3 /*break*/, 13];
+                case 12:
                     if (queryForNextPage) {
                         getBatch(queryForNextPage);
                     }
@@ -185,6 +174,38 @@ function getBatch(query) {
                                 console.log('unknown mode: ', mode);
                         }
                     }
+                    _b.label = 13;
+                case 13: return [2 /*return*/];
+            }
+        });
+    });
+}
+function getBatch(query) {
+    return __awaiter(this, void 0, void 0, function () {
+        var fileSet, _a, files, queryForNextPage, c;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    fileSet = [];
+                    return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
+                            .getFiles(query)];
+                case 1:
+                    _a = _b.sent(), files = _a[0], queryForNextPage = _a[1];
+                    c = 0;
+                    files.forEach(function (file) {
+                        return __awaiter(this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                if (!file.name.endsWith('/')) { // skip folders
+                                    count++;
+                                    c++;
+                                    fileSet.push(file);
+                                }
+                                return [2 /*return*/];
+                            });
+                        });
+                    });
+                    // console.log('prepared batch of ', fileSet.length, ' files')
+                    processBatch(fileSet, queryForNextPage);
                     return [2 /*return*/];
             }
         });

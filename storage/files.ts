@@ -58,7 +58,72 @@ try {
 
 const storage = getStorageInstance();
 
+async function processBatch(fileSet: File[], queryForNextPage: any) {
+    if (fileSet.length > 0) {
+        const file = fileSet.shift();
+        switch (mode) {
+            case 'single':
+                break;
+            case 'batch':
+                break;
+            case 'download':
+                try {
+                    console.log('downloading: ', file.name);
+                    const [err] = await storage.bucket(getBucketName())
+                    .file(file.name)
+                    .download({destination: `./tmp/${encodeURIComponent(file.name)}`});
+                    if (err) {
+                        console.error('Error downloading file', err);
+                    } else {
+                        downloaded++;
+                    }
+                    processBatch(fileSet, queryForNextPage);   
+                } catch (err) {
+                    console.log('err', err);
+                }
+                break;
+            case 'upload':
+                break;
+            case 'count':
+                processBatch(fileSet, queryForNextPage);
+                break;
+            case 'list':
+                console.log(file.name);
+                processBatch(fileSet, queryForNextPage);
+                break;
+            default:
+                console.log('unknown mode: ', mode);
+                process.exit(1);
+        }    
+    } else {
+        if (queryForNextPage) {
+            getBatch(queryForNextPage);
+        } else {
+            switch (mode) {
+                case 'single':
+                    break;
+                case 'batch':
+                    break;
+                case 'download':
+                    console.log('downloaded ', downloaded, ' of ', count, ' files');
+                    break;
+                case 'upload':
+                    break;
+                case 'count':
+                    console.log('count: ', count);
+                    break;
+                case 'list':
+                    console.log(`${count} files found`);
+                    break;
+                default:
+                    console.log('unknown mode: ', mode);
+            }    
+        }
+    }
+}
+
 async function getBatch(query: any) {
+    const fileSet = [];
     const [files, queryForNextPage]  = await storage.bucket(getBucketName())
     .getFiles(query);
     let c = 0;
@@ -66,65 +131,13 @@ async function getBatch(query: any) {
         if (!file.name.endsWith('/')) { // skip folders
             count++;
             c++;
-            switch (mode) {
-                case 'single':
-                    break;
-                case 'batch':
-                    break;
-                case 'download':
-                    try {
-                        console.log('downloading: ', file.name);
-                        const [err] = await storage.bucket(getBucketName())
-                        .file(file.name)
-                        .download({destination: `./tmp/${encodeURIComponent(file.name)}`});
-                        if (err) {
-                            console.error('Error downloading file', err);
-                        } else {
-                            downloaded++;
-                        }
-                        console.log('download complete');    
-                    } catch (err) {
-                        console.log('err', err);
-                    }
-                    break;
-                case 'upload':
-                    break;
-                case 'count':
-                    break;
-                case 'list':
-                    console.log(file.name);
-                    break;
-                default:
-                    console.log('unknown mode: ', mode);
-                    process.exit(1);
-            }    
+            fileSet.push(file);
         }
-    })
-    // console.log('***** ', c, ' files in batch')
-    if (queryForNextPage) {
-        getBatch(queryForNextPage);
-    } else {
-        switch (mode) {
-            case 'single':
-                break;
-            case 'batch':
-                break;
-            case 'download':
-                console.log('downloaded ', downloaded, ' of ', count, ' files');
-                break;
-            case 'upload':
-                break;
-            case 'count':
-                console.log('count: ', count);
-                break;
-            case 'list':
-                console.log(`${count} files found`);
-                break;
-            default:
-                console.log('unknown mode: ', mode);
-        }
-    }
+    });
+    // console.log('prepared batch of ', fileSet.length, ' files')
+    processBatch(fileSet, queryForNextPage);
 }
+ 
 async function main() {
     const startQuery = { 
         prefix: prefix, 
