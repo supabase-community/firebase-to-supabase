@@ -63,6 +63,7 @@ if (['single', 'batch', 'download', 'upload', 'count', 'list'].indexOf(mode) < 0
 var batchSize;
 var limit;
 var count = 0;
+var downloaded = 0;
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
 //
@@ -105,45 +106,63 @@ function getBatch(query) {
                     c = 0;
                     files.forEach(function (file) {
                         return __awaiter(this, void 0, void 0, function () {
-                            var err;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
+                            var _a, err, err_1;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
                                     case 0:
+                                        if (!!file.name.endsWith('/')) return [3 /*break*/, 11];
                                         count++;
-                                        switch (mode) {
-                                            case 'single':
-                                                break;
-                                            case 'batch':
-                                                break;
-                                            case 'download':
-                                                break;
-                                            case 'upload':
-                                                break;
-                                            case 'count':
-                                                break;
-                                            case 'list':
-                                                console.log(file.name);
-                                                break;
-                                            default:
-                                                console.log('unknown mode: ', mode);
-                                                process.exit(1);
+                                        c++;
+                                        _a = mode;
+                                        switch (_a) {
+                                            case 'single': return [3 /*break*/, 1];
+                                            case 'batch': return [3 /*break*/, 2];
+                                            case 'download': return [3 /*break*/, 3];
+                                            case 'upload': return [3 /*break*/, 7];
+                                            case 'count': return [3 /*break*/, 8];
+                                            case 'list': return [3 /*break*/, 9];
                                         }
+                                        return [3 /*break*/, 10];
+                                    case 1: return [3 /*break*/, 11];
+                                    case 2: return [3 /*break*/, 11];
+                                    case 3:
+                                        _b.trys.push([3, 5, , 6]);
+                                        console.log('downloading: ', file.name);
                                         return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
-                                                .file(file.name).download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
-                                    case 1:
-                                        err = (_a.sent())[0];
+                                                .file(file.name)
+                                                .download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
+                                    case 4:
+                                        err = (_b.sent())[0];
                                         if (err) {
                                             console.error('Error downloading file', err);
                                         }
-                                        c++;
-                                        return [2 /*return*/];
+                                        else {
+                                            downloaded++;
+                                        }
+                                        console.log('download complete');
+                                        return [3 /*break*/, 6];
+                                    case 5:
+                                        err_1 = _b.sent();
+                                        console.log('err', err_1);
+                                        return [3 /*break*/, 6];
+                                    case 6: return [3 /*break*/, 11];
+                                    case 7: return [3 /*break*/, 11];
+                                    case 8: return [3 /*break*/, 11];
+                                    case 9:
+                                        console.log(file.name);
+                                        return [3 /*break*/, 11];
+                                    case 10:
+                                        console.log('unknown mode: ', mode);
+                                        process.exit(1);
+                                        _b.label = 11;
+                                    case 11: return [2 /*return*/];
                                 }
                             });
                         });
                     });
                     // console.log('***** ', c, ' files in batch')
                     if (queryForNextPage) {
-                        //getBatch(queryForNextPage);
+                        getBatch(queryForNextPage);
                     }
                     else {
                         switch (mode) {
@@ -152,20 +171,18 @@ function getBatch(query) {
                             case 'batch':
                                 break;
                             case 'download':
+                                console.log('downloaded ', downloaded, ' of ', count, ' files');
                                 break;
                             case 'upload':
                                 break;
                             case 'count':
                                 console.log('count: ', count);
-                                process.exit(0);
                                 break;
                             case 'list':
                                 console.log("".concat(count, " files found"));
-                                process.exit(0);
                                 break;
                             default:
                                 console.log('unknown mode: ', mode);
-                                process.exit(1);
                         }
                     }
                     return [2 /*return*/];
