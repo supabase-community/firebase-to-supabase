@@ -27,6 +27,7 @@ if ([ 'single', 'batch', 'download', 'upload', 'count', 'list' ].indexOf(mode) <
 let batchSize: number;
 let limit: number;
 let count = 0;
+let downloaded = 0;
 
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
@@ -62,35 +63,46 @@ async function getBatch(query: any) {
     .getFiles(query);
     let c = 0;
     files.forEach(async function(file) {
-        count++;
-        switch (mode) {
-            case 'single':
-                break;
-            case 'batch':
-                break;
-            case 'download':
-                break;
-            case 'upload':
-                break;
-            case 'count':
-                break;
-            case 'list':
-                console.log(file.name);
-                break;
-            default:
-                console.log('unknown mode: ', mode);
-                process.exit(1);
+        if (!file.name.endsWith('/')) { // skip folders
+            count++;
+            c++;
+            switch (mode) {
+                case 'single':
+                    break;
+                case 'batch':
+                    break;
+                case 'download':
+                    try {
+                        console.log('downloading: ', file.name);
+                        const [err] = await storage.bucket(getBucketName())
+                        .file(file.name)
+                        .download({destination: `./tmp/${encodeURIComponent(file.name)}`});
+                        if (err) {
+                            console.error('Error downloading file', err);
+                        } else {
+                            downloaded++;
+                        }
+                        console.log('download complete');    
+                    } catch (err) {
+                        console.log('err', err);
+                    }
+                    break;
+                case 'upload':
+                    break;
+                case 'count':
+                    break;
+                case 'list':
+                    console.log(file.name);
+                    break;
+                default:
+                    console.log('unknown mode: ', mode);
+                    process.exit(1);
+            }    
         }
-        const [err] = await storage.bucket(getBucketName())
-            .file(file.name).download({destination: `./tmp/${encodeURIComponent(file.name)}`});
-        if (err) {
-            console.error('Error downloading file', err);
-        }
-        c++;
     })
     // console.log('***** ', c, ' files in batch')
     if (queryForNextPage) {
-        //getBatch(queryForNextPage);
+        getBatch(queryForNextPage);
     } else {
         switch (mode) {
             case 'single':
@@ -98,20 +110,18 @@ async function getBatch(query: any) {
             case 'batch':
                 break;
             case 'download':
+                console.log('downloaded ', downloaded, ' of ', count, ' files');
                 break;
             case 'upload':
                 break;
             case 'count':
                 console.log('count: ', count);
-                process.exit(0);
                 break;
             case 'list':
                 console.log(`${count} files found`);
-                process.exit(0);
                 break;
             default:
                 console.log('unknown mode: ', mode);
-                process.exit(1);
         }
     }
 }
