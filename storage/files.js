@@ -109,6 +109,7 @@ function getBatch(query) {
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
+                                        count++;
                                         switch (mode) {
                                             case 'single':
                                                 break;
@@ -119,9 +120,9 @@ function getBatch(query) {
                                             case 'upload':
                                                 break;
                                             case 'count':
-                                                count++;
                                                 break;
                                             case 'list':
+                                                console.log(file.name);
                                                 break;
                                             default:
                                                 console.log('unknown mode: ', mode);
@@ -159,6 +160,8 @@ function getBatch(query) {
                                 process.exit(0);
                                 break;
                             case 'list':
+                                console.log("".concat(count, " files found"));
+                                process.exit(0);
                                 break;
                             default:
                                 console.log('unknown mode: ', mode);

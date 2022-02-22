@@ -62,6 +62,7 @@ async function getBatch(query: any) {
     .getFiles(query);
     let c = 0;
     files.forEach(async function(file) {
+        count++;
         switch (mode) {
             case 'single':
                 break;
@@ -72,9 +73,9 @@ async function getBatch(query: any) {
             case 'upload':
                 break;
             case 'count':
-                count++;
                 break;
             case 'list':
+                console.log(file.name);
                 break;
             default:
                 console.log('unknown mode: ', mode);
@@ -105,6 +106,8 @@ async function getBatch(query: any) {
                 process.exit(0);
                 break;
             case 'list':
+                console.log(`${count} files found`);
+                process.exit(0);
                 break;
             default:
                 console.log('unknown mode: ', mode);
