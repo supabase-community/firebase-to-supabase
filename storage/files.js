@@ -36,19 +36,56 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
+var fs_1 = require("fs");
 var utils_1 = require("./utils");
 var args = process.argv.slice(2);
 if (args.length < 1) {
-    console.log('Usage: files.ts <prefix> [<batchSize>]');
-    console.log('       to process the root bucket use prefix ""');
-    console.log('       batchSize is optional, default is 100');
+    console.log('Usage: node files.js <prefix> <mode> [<batchSize>] [<limit>]');
+    console.log('       <prefix>: the prefix of the files to download');
+    console.log('                 to process the root bucket use prefix ""');
+    console.log('       <mode>: "single" to download/upload one file at a time');
+    console.log('               "batch" to download/upload a batch of files at a time');
+    console.log('               "download" to download files only');
+    console.log('               "upload" to upload files only');
+    console.log('               "count" to get a matching file count');
+    console.log('               "list" to get a matching list of file names');
+    console.log('       <batchSize>: (optional), default is 100');
+    console.log('       <limit>: (optional), stop after processing this many files');
     process.exit(1);
 }
 var prefix = args[0];
-var batchSize = args[1] || '100';
+var mode = args[1] || '';
+var batchSize;
+var limit;
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
 //
+try {
+    batchSize = parseInt(args[2] || '100');
+}
+catch (err) {
+    console.error('error setting batchSize:');
+    console.error(err);
+    process.exit(1);
+}
+try {
+    limit = parseInt(args[3] || '0');
+}
+catch (err) {
+    console.error('error setting limit:');
+    console.error(err);
+    process.exit(1);
+}
+try {
+    if (!(0, fs_1.existsSync)('./tmp')) {
+        (0, fs_1.mkdirSync)('./tmp');
+    }
+}
+catch (err) {
+    console.error('error creating ./tmp folder:');
+    console.error(err);
+    process.exit(1);
+}
 var storage = (0, utils_1.getStorageInstance)();
 function getBatch(query) {
     return __awaiter(this, void 0, void 0, function () {
@@ -61,12 +98,28 @@ function getBatch(query) {
                     _a = _b.sent(), files = _a[0], queryForNextPage = _a[1];
                     c = 0;
                     files.forEach(function (file) {
-                        console.log("***** ", file.name);
-                        c++;
+                        return __awaiter(this, void 0, void 0, function () {
+                            var err;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        console.log("***** ", file.name);
+                                        return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
+                                                .file(file.name).download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
+                                    case 1:
+                                        err = (_a.sent())[0];
+                                        if (err) {
+                                            console.error('Error downloading file', err);
+                                        }
+                                        c++;
+                                        return [2 /*return*/];
+                                }
+                            });
+                        });
                     });
-                    console.log('***** ', c, ' files found');
+                    console.log('***** ', c, ' files in batch');
                     if (queryForNextPage) {
-                        getBatch(queryForNextPage);
+                        //getBatch(queryForNextPage);
                     }
                     else {
                         console.log('no more files to process..');
@@ -78,21 +131,12 @@ function getBatch(query) {
 }
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var batch, startQuery;
+        var startQuery;
         return __generator(this, function (_a) {
-            batch = 100;
-            try {
-                if (batchSize) {
-                    batch = parseInt(batchSize);
-                }
-            }
-            catch (e) {
-                batch = 100;
-            }
             startQuery = {
                 prefix: prefix,
                 autoPaginate: false,
-                maxResults: batch
+                maxResults: batchSize
             };
             getBatch(startQuery);
             return [2 /*return*/];
