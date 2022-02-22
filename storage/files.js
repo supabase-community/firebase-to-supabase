@@ -55,8 +55,14 @@ if (args.length < 1) {
 }
 var prefix = args[0];
 var mode = args[1] || '';
+if (['single', 'batch', 'download', 'upload', 'count', 'list'].indexOf(mode) < 0) {
+    console.error('Invalid mode: ', mode);
+    console.log('mode must be one of: single, batch, download, upload, count, list');
+    process.exit(1);
+}
 var batchSize;
 var limit;
+var count = 0;
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
 //
@@ -103,7 +109,24 @@ function getBatch(query) {
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
-                                        console.log("***** ", file.name);
+                                        switch (mode) {
+                                            case 'single':
+                                                break;
+                                            case 'batch':
+                                                break;
+                                            case 'download':
+                                                break;
+                                            case 'upload':
+                                                break;
+                                            case 'count':
+                                                count++;
+                                                break;
+                                            case 'list':
+                                                break;
+                                            default:
+                                                console.log('unknown mode: ', mode);
+                                                process.exit(1);
+                                        }
                                         return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
                                                 .file(file.name).download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
                                     case 1:
@@ -117,12 +140,30 @@ function getBatch(query) {
                             });
                         });
                     });
-                    console.log('***** ', c, ' files in batch');
+                    // console.log('***** ', c, ' files in batch')
                     if (queryForNextPage) {
                         //getBatch(queryForNextPage);
                     }
                     else {
-                        console.log('no more files to process..');
+                        switch (mode) {
+                            case 'single':
+                                break;
+                            case 'batch':
+                                break;
+                            case 'download':
+                                break;
+                            case 'upload':
+                                break;
+                            case 'count':
+                                console.log('count: ', count);
+                                process.exit(0);
+                                break;
+                            case 'list':
+                                break;
+                            default:
+                                console.log('unknown mode: ', mode);
+                                process.exit(1);
+                        }
                     }
                     return [2 /*return*/];
             }
