@@ -19,8 +19,14 @@ if (args.length < 1) {
 } 
 const prefix = args[0]
 const mode = args[1] || '';
+if ([ 'single', 'batch', 'download', 'upload', 'count', 'list' ].indexOf(mode) < 0) {
+    console.error('Invalid mode: ', mode);
+    console.log('mode must be one of: single, batch, download, upload, count, list');
+    process.exit(1);
+}
 let batchSize: number;
 let limit: number;
+let count = 0;
 
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
@@ -56,7 +62,24 @@ async function getBatch(query: any) {
     .getFiles(query);
     let c = 0;
     files.forEach(async function(file) {
-        console.log("***** ", file.name)
+        switch (mode) {
+            case 'single':
+                break;
+            case 'batch':
+                break;
+            case 'download':
+                break;
+            case 'upload':
+                break;
+            case 'count':
+                count++;
+                break;
+            case 'list':
+                break;
+            default:
+                console.log('unknown mode: ', mode);
+                process.exit(1);
+        }
         const [err] = await storage.bucket(getBucketName())
             .file(file.name).download({destination: `./tmp/${encodeURIComponent(file.name)}`});
         if (err) {
@@ -64,11 +87,29 @@ async function getBatch(query: any) {
         }
         c++;
     })
-    console.log('***** ', c, ' files in batch')
+    // console.log('***** ', c, ' files in batch')
     if (queryForNextPage) {
         //getBatch(queryForNextPage);
     } else {
-        console.log('no more files to process..');
+        switch (mode) {
+            case 'single':
+                break;
+            case 'batch':
+                break;
+            case 'download':
+                break;
+            case 'upload':
+                break;
+            case 'count':
+                console.log('count: ', count);
+                process.exit(0);
+                break;
+            case 'list':
+                break;
+            default:
+                console.log('unknown mode: ', mode);
+                process.exit(1);
+        }
     }
 }
 async function main() {
