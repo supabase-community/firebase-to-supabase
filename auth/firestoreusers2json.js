@@ -43,12 +43,11 @@ var serviceAccount = require("./firebase-service.json");
 try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://" + serviceAccount.project_id + ".firebaseio.com" // "https://PROJECTID.firebaseio.com"
+        databaseURL: "https://".concat(serviceAccount.project_id, ".firebaseio.com") // "https://PROJECTID.firebaseio.com"
     });
 }
 catch (e) { }
 var args = process.argv.slice(2);
-//let db;
 if (args.length < 0) {
     console.log('Usage: node firestoreusers2json.js [<filename.json>] [<batch_size>]');
     console.log('   <filename.json>: (optional) output filename (defaults to ./users.json');
@@ -58,22 +57,25 @@ if (args.length < 0) {
 else {
     main();
 }
-var filename = args[0] || './users.json';
-var batch_size = args[1] || '100';
 function main() {
     return __awaiter(this, void 0, void 0, function () {
+        var filename, batchSizeInput, batchSize;
         return __generator(this, function (_a) {
-            fs.writeFileSync(filename, '[', 'utf-8');
-            listUsers();
+            filename = args[0] || "./users.json";
+            batchSizeInput = args[1] || "100";
+            batchSize = parseInt(batchSizeInput);
+            fs.writeFileSync(filename, "[", "utf-8");
+            listUsers(filename, batchSize);
             return [2 /*return*/];
         });
     });
 }
-var count = 0;
-function listUsers(nextPageToken) {
+function listUsers(filename, batchSize, nextPageToken) {
     return __awaiter(this, void 0, void 0, function () {
+        var count;
         return __generator(this, function (_a) {
-            admin.auth().listUsers(parseInt(batch_size), nextPageToken)
+            count = 0;
+            admin.auth().listUsers(batchSize, nextPageToken)
                 .then(function (usersFound) {
                 var users = usersFound.users;
                 users.forEach(function (user) {
@@ -81,7 +83,7 @@ function listUsers(nextPageToken) {
                     count++;
                 });
                 if (usersFound.pageToken) {
-                    listUsers(usersFound.pageToken);
+                    listUsers(filename, batchSize, usersFound.pageToken);
                 }
                 else {
                     fs.appendFileSync(filename, ']\n', 'utf-8');
