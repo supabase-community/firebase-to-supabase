@@ -57,7 +57,7 @@ hash_config {
 #### Set your Hash Parameters
 Now that you have your 4 hash parameters, you can set them up in your environment(s):
 ##### For a local development server (or hosting your own `NodeJS` server):
-* copy the file `local.env.sh.sample` to `local.env.sh`
+* copy the file `local.env.sh.sample` to `local.env.sh` (in the middleware/verify-firebase-pw folder)
 * edit the `MEMCOST`, `ROUNDS`, `SALTSEPARATOR`, and `SIGNERKEY` environment variables you obtained in the previous step
 
 Sample `local.env.sh` file:
