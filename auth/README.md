@@ -98,7 +98,8 @@ Sample `[env]` section for the `fly.toml` file:
 #### Hosting the Middleware
 ##### Local hosting for testing (or for running your own server using `NodeJS`):
 * make sure you've set up `local.env.sh` as described above
-* run `node local.sh`
+* run `npm i` in `auth/middleware/verify-firebase-pw/` to install dependencies 
+* run `./local.sh`
 The `local.sh` file does two things:
 ```sh
 source ./local.env.sh # sets environment variables stored in ./local.env.sh
