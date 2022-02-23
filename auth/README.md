@@ -57,7 +57,7 @@ hash_config {
 #### Set your Hash Parameters
 Now that you have your 4 hash parameters, you can set them up in your environment(s):
 ##### For a local development server (or hosting your own `NodeJS` server):
-* copy the file `local.env.sh.sample` to `local.env.sh`
+* copy the file `local.env.sh.sample` to `local.env.sh` (in the middleware/verify-firebase-pw folder)
 * edit the `MEMCOST`, `ROUNDS`, `SALTSEPARATOR`, and `SIGNERKEY` environment variables you obtained in the previous step
 
 Sample `local.env.sh` file:
@@ -98,7 +98,8 @@ Sample `[env]` section for the `fly.toml` file:
 #### Hosting the Middleware
 ##### Local hosting for testing (or for running your own server using `NodeJS`):
 * make sure you've set up `local.env.sh` as described above
-* run `node local.sh`
+* run `npm i` in `auth/middleware/verify-firebase-pw/` to install dependencies 
+* run `./local.sh`
 The `local.sh` file does two things:
 ```sh
 source ./local.env.sh # sets environment variables stored in ./local.env.sh
