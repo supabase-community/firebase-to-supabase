@@ -93,11 +93,11 @@ function main(filename) {
                 case 1:
                     client = _a.sent();
                     client.connect();
-                    console.log("loading users from " + filename);
+                    console.log("loading users from ".concat(filename));
                     return [4 /*yield*/, loadUsers(filename)];
                 case 2:
                     _a.sent();
-                    console.log("done processing " + filename);
+                    console.log("done processing ".concat(filename));
                     quit();
                     return [2 /*return*/];
             }
@@ -221,7 +221,7 @@ function insertUsers(rows) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    sql = createUserHeader() + rows.join(',\n');
+                    sql = createUserHeader() + rows.join(',\n') + 'ON CONFLICT DO NOTHING;';
                     return [4 /*yield*/, runSQL(sql)];
                 case 1:
                     result = _a.sent();
@@ -297,7 +297,7 @@ function createUserHeader() {
     return "INSERT INTO auth.users (\n        instance_id,\n        id,\n        aud,\n        role,\n        email,\n        encrypted_password,\n        email_confirmed_at,\n        invited_at,\n        confirmation_token,\n        confirmation_sent_at,\n        recovery_token,\n        recovery_sent_at,\n        email_change_token_new,\n        email_change,\n        email_change_sent_at,\n        last_sign_in_at,\n        raw_app_meta_data,\n        raw_user_meta_data,\n        is_super_admin,\n        created_at,\n        updated_at,\n        phone,\n        phone_confirmed_at,\n        phone_change,\n        phone_change_token,\n        phone_change_sent_at,\n        email_change_token_current,\n        email_change_confirm_status    \n    ) VALUES ";
 }
 function createUser(user) {
-    var sql = "(\n        '00000000-0000-0000-0000-000000000000', /* instance_id */\n        uuid_generate_v4(), /* id */\n        'authenticated', /* aud character varying(255),*/\n        'authenticated', /* role character varying(255),*/\n        '" + user.email + "', /* email character varying(255),*/\n        '', /* encrypted_password character varying(255),*/\n        " + (user.emailVerified ? 'NOW()' : 'null') + ", /* email_confirmed_at timestamp with time zone,*/\n        '" + formatDate(user.metadata.creationTime) + "', /* invited_at timestamp with time zone, */\n        '', /* confirmation_token character varying(255), */\n        null, /* confirmation_sent_at timestamp with time zone, */\n        '', /* recovery_token character varying(255), */\n        null, /* recovery_sent_at timestamp with time zone, */\n        '', /* email_change_token_new character varying(255), */\n        '', /* email_change character varying(255), */\n        null, /* email_change_sent_at timestamp with time zone, */\n        null, /* last_sign_in_at timestamp with time zone, */\n        '" + getProviderString(user.providerData) + "', /* raw_app_meta_data jsonb,*/\n        '{\"fbuser\":" + JSON.stringify(user) + "}', /* raw_user_meta_data jsonb,*/\n        false, /* is_super_admin boolean, */\n        NOW(), /* created_at timestamp with time zone, */\n        NOW(), /* updated_at timestamp with time zone, */\n        null, /* phone character varying(15) DEFAULT NULL::character varying, */\n        null, /* phone_confirmed_at timestamp with time zone, */\n        '', /* phone_change character varying(15) DEFAULT ''::character varying, */\n        '', /* phone_change_token character varying(255) DEFAULT ''::character varying, */\n        null, /* phone_change_sent_at timestamp with time zone, */\n        '', /* email_change_token_current character varying(255) DEFAULT ''::character varying, */\n        0 /*email_change_confirm_status smallint DEFAULT 0 */   \n    )";
+    var sql = "(\n        '00000000-0000-0000-0000-000000000000', /* instance_id */\n        uuid_generate_v4(), /* id */\n        'authenticated', /* aud character varying(255),*/\n        'authenticated', /* role character varying(255),*/\n        '".concat(user.email, "', /* email character varying(255),*/\n        '', /* encrypted_password character varying(255),*/\n        ").concat(user.emailVerified ? 'NOW()' : 'null', ", /* email_confirmed_at timestamp with time zone,*/\n        '").concat(formatDate(user.metadata.creationTime), "', /* invited_at timestamp with time zone, */\n        '', /* confirmation_token character varying(255), */\n        null, /* confirmation_sent_at timestamp with time zone, */\n        '', /* recovery_token character varying(255), */\n        null, /* recovery_sent_at timestamp with time zone, */\n        '', /* email_change_token_new character varying(255), */\n        '', /* email_change character varying(255), */\n        null, /* email_change_sent_at timestamp with time zone, */\n        null, /* last_sign_in_at timestamp with time zone, */\n        '").concat(getProviderString(user.providerData), "', /* raw_app_meta_data jsonb,*/\n        '{\"fbuser\":").concat(JSON.stringify(user), "}', /* raw_user_meta_data jsonb,*/\n        false, /* is_super_admin boolean, */\n        NOW(), /* created_at timestamp with time zone, */\n        NOW(), /* updated_at timestamp with time zone, */\n        null, /* phone character varying(15) DEFAULT NULL::character varying, */\n        null, /* phone_confirmed_at timestamp with time zone, */\n        '', /* phone_change character varying(15) DEFAULT ''::character varying, */\n        '', /* phone_change_token character varying(255) DEFAULT ''::character varying, */\n        null, /* phone_change_sent_at timestamp with time zone, */\n        '', /* email_change_token_current character varying(255) DEFAULT ''::character varying, */\n        0 /*email_change_confirm_status smallint DEFAULT 0 */   \n    )");
     return sql;
 }
 function getProviderString(providerData) {
@@ -318,7 +318,7 @@ function getProviderString(providerData) {
         }
         providers.push(provider);
     }
-    var providerString = "{\"provider\": \"" + providers[0] + "\",\"providers\":[\"" + providers.join('","') + "\"]}";
+    var providerString = "{\"provider\": \"".concat(providers[0], "\",\"providers\":[\"").concat(providers.join('","'), "\"]}");
     return providerString;
 }
 /*

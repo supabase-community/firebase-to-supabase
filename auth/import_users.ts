@@ -148,7 +148,7 @@ async function loadUsers_old(filename: string): Promise<any> {
 }
 
 async function insertUsers(rows: any[]): Promise<any> {
-    const sql = createUserHeader() + rows.join(',\n');
+    const sql = createUserHeader() + rows.join(',\n') + 'ON CONFLICT DO NOTHING;';
     // console.log('sql', sql);
     const result = await runSQL(sql);
     return result;   
