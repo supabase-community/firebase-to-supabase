@@ -40,33 +40,53 @@ var fs_1 = require("fs");
 var utils_1 = require("./utils");
 var args = process.argv.slice(2);
 if (args.length < 1) {
-    console.log('Usage: node files.js <prefix> <mode> [<batchSize>] [<limit>]');
+    console.log('Usage: node download.js <prefix> [<folder>] [<batchSize>] [<limit>] [<token>]');
     console.log('       <prefix>: the prefix of the files to download');
     console.log('                 to process the root bucket use prefix ""');
-    console.log('       <mode>: "single" to download/upload one file at a time');
-    console.log('               "batch" to download/upload a batch of files at a time');
-    console.log('               "download" to download files only');
-    console.log('               "upload" to upload files only');
-    console.log('               "count" to get a matching file count');
-    console.log('               "list" to get a matching list of file names');
+    console.log('       <folder>: (optional), name of subfolder for downloaded files, default is "downloads"');
     console.log('       <batchSize>: (optional), default is 100');
     console.log('       <limit>: (optional), stop after processing this many files');
+    console.log('       <token>: (optional), begin processing at this pageToken');
     process.exit(1);
 }
 var prefix = args[0];
-var mode = args[1] || '';
-if (['single', 'batch', 'download', 'upload', 'count', 'list'].indexOf(mode) < 0) {
-    console.error('Invalid mode: ', mode);
-    console.log('mode must be one of: single, batch, download, upload, count, list');
-    process.exit(1);
-}
 var batchSize;
-var limit;
+var limit = 0;
 var count = 0;
 var downloaded = 0;
+var token = '';
+var folder = 'downloads';
+/*
+
+{
+  prefix: '',
+  autoPaginate: false,
+  maxResults: 100,
+  pageToken: 'xxxxxxxxxxxxxxxxxxxx'
+}
+
+*/
 // GetFilesOptions: 
 // https://googleapis.dev/nodejs/storage/latest/global.html#GetFilesOptions
 //
+try {
+    if (args[1]) {
+        folder = args[1];
+    }
+    // check if folder is a valid folder name
+    if (!folder.match(/^[a-zA-Z0-9_\-]+$/)) {
+        console.log('folder name must be alphanumeric');
+        process.exit(1);
+    }
+    if (!(0, fs_1.existsSync)("./".concat(folder))) {
+        (0, fs_1.mkdirSync)("./".concat(folder));
+    }
+}
+catch (err) {
+    console.error('error creating ./downloads folder:');
+    console.error(err);
+    process.exit(1);
+}
 try {
     batchSize = parseInt(args[2] || '100');
 }
@@ -84,98 +104,60 @@ catch (err) {
     process.exit(1);
 }
 try {
-    if (!(0, fs_1.existsSync)('./tmp')) {
-        (0, fs_1.mkdirSync)('./tmp');
+    if (args[4]) {
+        token = args[4];
+        if (token.length !== 20) {
+            console.error('token must be 20 characters long');
+            process.exit(1);
+        }
     }
 }
 catch (err) {
-    console.error('error creating ./tmp folder:');
+    console.error('error in token:');
     console.error(err);
     process.exit(1);
 }
 var storage = (0, utils_1.getStorageInstance)();
 function processBatch(fileSet, queryForNextPage) {
     return __awaiter(this, void 0, void 0, function () {
-        var file, _a, err, err_1;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var file, err, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
-                    if (!(fileSet.length > 0)) return [3 /*break*/, 12];
+                    if (!(fileSet.length > 0)) return [3 /*break*/, 5];
                     file = fileSet.shift();
-                    _a = mode;
-                    switch (_a) {
-                        case 'single': return [3 /*break*/, 1];
-                        case 'batch': return [3 /*break*/, 2];
-                        case 'download': return [3 /*break*/, 3];
-                        case 'upload': return [3 /*break*/, 7];
-                        case 'count': return [3 /*break*/, 8];
-                        case 'list': return [3 /*break*/, 9];
-                    }
-                    return [3 /*break*/, 10];
-                case 1: return [3 /*break*/, 11];
-                case 2: return [3 /*break*/, 11];
-                case 3:
-                    _b.trys.push([3, 5, , 6]);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
                     console.log('downloading: ', file.name);
                     return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
                             .file(file.name)
-                            .download({ destination: "./tmp/".concat(encodeURIComponent(file.name)) })];
-                case 4:
-                    err = (_b.sent())[0];
+                            .download({ destination: "./".concat(folder, "/").concat(encodeURIComponent(file.name)) })];
+                case 2:
+                    err = (_a.sent())[0];
                     if (err) {
                         console.error('Error downloading file', err);
                     }
                     else {
                         downloaded++;
                     }
-                    //console.log('download complete'); 
                     processBatch(fileSet, queryForNextPage);
-                    return [3 /*break*/, 6];
-                case 5:
-                    err_1 = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_1 = _a.sent();
                     console.log('err', err_1);
-                    return [3 /*break*/, 6];
-                case 6: return [3 /*break*/, 11];
-                case 7: return [3 /*break*/, 11];
-                case 8:
-                    processBatch(fileSet, queryForNextPage);
-                    return [3 /*break*/, 11];
-                case 9:
-                    console.log(file.name);
-                    processBatch(fileSet, queryForNextPage);
-                    return [3 /*break*/, 11];
-                case 10:
-                    console.log('unknown mode: ', mode);
-                    process.exit(1);
-                    _b.label = 11;
-                case 11: return [3 /*break*/, 13];
-                case 12:
-                    if (queryForNextPage) {
+                    return [3 /*break*/, 4];
+                case 4: return [3 /*break*/, 6];
+                case 5:
+                    if (queryForNextPage && (limit === 0 || count < limit)) {
                         getBatch(queryForNextPage);
                     }
                     else {
-                        switch (mode) {
-                            case 'single':
-                                break;
-                            case 'batch':
-                                break;
-                            case 'download':
-                                console.log('downloaded ', downloaded, ' of ', count, ' files');
-                                break;
-                            case 'upload':
-                                break;
-                            case 'count':
-                                console.log('count: ', count);
-                                break;
-                            case 'list':
-                                console.log("".concat(count, " files found"));
-                                break;
-                            default:
-                                console.log('unknown mode: ', mode);
-                        }
+                        console.log("done: downloaded ".concat(downloaded, " files"));
+                        process.exit(0);
                     }
-                    _b.label = 13;
-                case 13: return [2 /*return*/];
+                    _a.label = 6;
+                case 6: return [2 /*return*/];
             }
         });
     });
@@ -198,7 +180,9 @@ function getBatch(query) {
                                 if (!file.name.endsWith('/')) { // skip folders
                                     count++;
                                     c++;
-                                    fileSet.push(file);
+                                    if (limit === 0 || count <= limit) {
+                                        fileSet.push(file);
+                                    }
                                 }
                                 return [2 /*return*/];
                             });
@@ -218,7 +202,8 @@ function main() {
             startQuery = {
                 prefix: prefix,
                 autoPaginate: false,
-                maxResults: batchSize
+                maxResults: batchSize,
+                pageToken: token
             };
             getBatch(startQuery);
             return [2 /*return*/];
