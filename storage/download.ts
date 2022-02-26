@@ -68,7 +68,8 @@ try {
 try {
     if (args[4]) {
         token = args[4];
-        if (token.length !== 20) {
+        
+        if (token.length !== 64) {
             console.error('token must be 20 characters long');
             process.exit(1);        
         }
@@ -113,6 +114,7 @@ async function getBatch(query: any) {
     const [files, queryForNextPage]  = await storage.bucket(getBucketName())
     .getFiles(query);
     let c = 0;
+    console.log('processing page: ', (queryForNextPage as any)?.pageToken! || '<starting page>');
     files.forEach(async function(file) {
         if (!file.name.endsWith('/')) { // skip folders
             count++;

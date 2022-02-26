@@ -106,7 +106,7 @@ catch (err) {
 try {
     if (args[4]) {
         token = args[4];
-        if (token.length !== 20) {
+        if (token.length !== 64) {
             console.error('token must be 20 characters long');
             process.exit(1);
         }
@@ -163,17 +163,19 @@ function processBatch(fileSet, queryForNextPage) {
     });
 }
 function getBatch(query) {
+    var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var fileSet, _a, files, queryForNextPage, c;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var fileSet, _b, files, queryForNextPage, c;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
                     fileSet = [];
                     return [4 /*yield*/, storage.bucket((0, utils_1.getBucketName)())
                             .getFiles(query)];
                 case 1:
-                    _a = _b.sent(), files = _a[0], queryForNextPage = _a[1];
+                    _b = _c.sent(), files = _b[0], queryForNextPage = _b[1];
                     c = 0;
+                    console.log('processing page: ', ((_a = queryForNextPage) === null || _a === void 0 ? void 0 : _a.pageToken) || '<starting page>');
                     files.forEach(function (file) {
                         return __awaiter(this, void 0, void 0, function () {
                             return __generator(this, function (_a) {
