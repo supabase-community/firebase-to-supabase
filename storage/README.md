@@ -48,7 +48,10 @@ To process in batches using multiple command-line executions, you must use the s
 `node upload.js <prefix> <folder> <bucket>`
 * `<prefix>`: the prefix of the files to download to process all files use an empty prefix: ""
 * `<folder>`: name of subfolder of files to upload, default is "downloads"
+
 **note**: the selected folder will be read as a subfolder of the current folder, i.e. `./downloads/`
 * `<bucket>`: name of bucket to upload to
+
 **note**: if the bucket does not exist it will be created as a `non-public` bucket
+
 **note 2**: you will need to set permissions on this new bucket in the Supabase dashboard before users will have access to download any files in a newly-created bucket
