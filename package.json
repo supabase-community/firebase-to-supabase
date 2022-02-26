@@ -10,7 +10,7 @@
   "author": "Mark Burggraf <mark@supabase.io>",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^1.27.0",
+    "@supabase/supabase-js": "^1.30.7",
     "firebase-admin": "^10.0.2",
     "firebase-scrypt": "^2.1.0",
     "moment": "^2.29.1",
