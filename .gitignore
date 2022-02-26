@@ -3,6 +3,7 @@ users.json
 supabase.ts
 node_modules/
 supabase-keys.ts
+supabase-keys.js
 supabase-service.json
 __*
 fly.toml
