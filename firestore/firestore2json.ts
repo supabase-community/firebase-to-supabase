@@ -13,7 +13,10 @@ if (args.length < 1) {
 }
 
 async function main(collectionName: string, batchSize: string) {
-
+    if (fs.existsSync(`./${collectionName}.json`)) {
+        console.log(`${collectionName}.json already exists, aborting...`);
+        process.exit(1);
+    }
     getAll(collectionName, 0, parseInt(batchSize));
     
 }

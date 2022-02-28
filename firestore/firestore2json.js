@@ -45,12 +45,16 @@ if (args.length < 1) {
     process.exit(1);
 }
 else {
-    db = utils_1.getFirestoreInstance();
+    db = (0, utils_1.getFirestoreInstance)();
     main(args[0], args[1] || '1000');
 }
 function main(collectionName, batchSize) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
+            if (fs.existsSync("./".concat(collectionName, ".json"))) {
+                console.log("".concat(collectionName, ".json already exists, aborting..."));
+                process.exit(1);
+            }
             getAll(collectionName, 0, parseInt(batchSize));
             return [2 /*return*/];
         });
@@ -70,7 +74,7 @@ function getAll(collectionName, offset, limit) {
                     _b.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    fs.appendFileSync("./" + collectionName + ".json", ']', 'utf8');
+                    fs.appendFileSync("./".concat(collectionName, ".json"), ']', 'utf8');
                     _b.label = 4;
                 case 4: return [2 /*return*/];
             }
@@ -101,7 +105,7 @@ function getBatch(collectionName, offset, limit) {
                                     item.original_id = doc.id;
                                 else if (!item.originalid)
                                     item.originalid = doc.id;
-                                fs.appendFileSync("./" + collectionName + ".json", ((offset === 0 && count === 0) ? '[\n' : ',') +
+                                fs.appendFileSync("./".concat(collectionName, ".json"), ((offset === 0 && count === 0) ? '[\n' : ',') +
                                     JSON.stringify(item, null, 2) + '\n', 'utf8');
                                 data.push(item);
                                 count++;

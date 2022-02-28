@@ -7,7 +7,7 @@ var serviceAccount = require("./firebase-service.json");
 try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://" + serviceAccount.project_id + ".firebaseio.com" // "https://PROJECTID.firebaseio.com"
+        databaseURL: "https://".concat(serviceAccount.project_id, ".firebaseio.com") // "https://PROJECTID.firebaseio.com"
     });
 }
 catch (e) { }
