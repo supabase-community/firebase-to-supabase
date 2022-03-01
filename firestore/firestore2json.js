@@ -36,62 +36,92 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
+exports.writeRecord = exports.endFile = exports.startFile = void 0;
 var utils_1 = require("./utils");
+exports.startFile = utils_1.startFile;
+exports.endFile = utils_1.endFile;
+exports.writeRecord = utils_1.writeRecord;
 var fs = require("fs");
 var args = process.argv.slice(2);
+var subprocess;
+if (fs.existsSync("./".concat(args[0], ".js"))) {
+    subprocess = require("./".concat(args[0], ".js"));
+}
 var db;
+var recordCounters = {};
+var limit = 0;
 if (args.length < 1) {
-    console.log('Usage: firestore2json.ts <collectionName> [<batchSize>]');
+    console.log('Usage: firestore2json.ts <collectionName> [<batchSize>] [<limit>]');
     process.exit(1);
 }
 else {
     db = (0, utils_1.getFirestoreInstance)();
-    main(args[0], args[1] || '1000');
+    main(args[0], args[1] || '1000', args[2] || '0');
 }
-function main(collectionName, batchSize) {
+function main(collectionName, batchSize, limit) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            if (fs.existsSync("./".concat(collectionName, ".json"))) {
-                console.log("".concat(collectionName, ".json already exists, aborting..."));
-                process.exit(1);
+            switch (_a.label) {
+                case 0:
+                    if (!fs.existsSync("./".concat(collectionName, ".json"))) return [3 /*break*/, 1];
+                    console.log("".concat(collectionName, ".json already exists, aborting..."));
+                    process.exit(1);
+                    return [3 /*break*/, 3];
+                case 1:
+                    (0, utils_1.startFile)(collectionName, recordCounters);
+                    if (subprocess && subprocess.startFunction) {
+                        subprocess.startFunction(collectionName, recordCounters);
+                    }
+                    return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3: return [2 /*return*/];
             }
-            getAll(collectionName, 0, parseInt(batchSize));
-            return [2 /*return*/];
         });
     });
 }
-function getAll(collectionName, offset, limit) {
+function getAll(collectionName, offset, batchSize, limit) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, data, error;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, getBatch(collectionName, offset, limit)];
+                case 0: return [4 /*yield*/, getBatch(collectionName, offset, batchSize, limit)];
                 case 1:
                     _a = _b.sent(), data = _a.data, error = _a.error;
                     if (!(data.length > 0)) return [3 /*break*/, 3];
-                    return [4 /*yield*/, getAll(collectionName, offset + data.length, limit)];
+                    return [4 /*yield*/, getAll(collectionName, offset + data.length, batchSize, limit)];
                 case 2:
                     _b.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    fs.appendFileSync("./".concat(collectionName, ".json"), ']', 'utf8');
+                    (0, utils_1.endFile)(collectionName);
+                    if (subprocess && subprocess.endFunction) {
+                        subprocess.endFunction(collectionName);
+                    }
+                    console.log("".concat(recordCounters[collectionName], " records written to ").concat(collectionName, ".json"));
                     _b.label = 4;
                 case 4: return [2 /*return*/];
             }
         });
     });
 }
-function getBatch(collectionName, offset, limit) {
+function getBatch(collectionName, offset, batchSize, limit) {
     return __awaiter(this, void 0, void 0, function () {
-        var data, error, count;
+        var data, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     data = [];
                     error = null;
-                    count = 0;
+                    if (recordCounters[collectionName] >= limit) {
+                        return [2 /*return*/, { data: data, error: error }];
+                    }
+                    if (limit > 0) {
+                        batchSize = Math.min(batchSize, limit - recordCounters[collectionName]);
+                    }
                     return [4 /*yield*/, db.collection(collectionName)
-                            .limit(limit)
+                            .limit(batchSize)
                             .offset(offset)
                             .get()
                             .then(function (snapshot) {
@@ -105,10 +135,11 @@ function getBatch(collectionName, offset, limit) {
                                     item.original_id = doc.id;
                                 else if (!item.originalid)
                                     item.originalid = doc.id;
-                                fs.appendFileSync("./".concat(collectionName, ".json"), ((offset === 0 && count === 0) ? '[\n' : ',') +
-                                    JSON.stringify(item, null, 2) + '\n', 'utf8');
+                                if (subprocess) {
+                                    item = subprocess.processDocument(item, recordCounters);
+                                }
+                                (0, utils_1.writeRecord)(collectionName, item, recordCounters);
                                 data.push(item);
-                                count++;
                             });
                         })["catch"](function (err) {
                             error = err;

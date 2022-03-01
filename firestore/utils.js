@@ -1,7 +1,8 @@
 "use strict";
 exports.__esModule = true;
-exports.getFirestoreInstance = exports.removeEmptyFields = void 0;
+exports.writeRecord = exports.endFile = exports.startFile = exports.getFirestoreInstance = exports.removeEmptyFields = void 0;
 var admin = require("firebase-admin");
+var fs = require("fs");
 var serviceAccount = require("./firebase-service.json");
 // console.log('databaseURL', `https://${serviceAccount.project_id}.firebaseio.com`);
 try {
@@ -27,3 +28,17 @@ function removeEmptyFields(obj) {
     });
 }
 exports.removeEmptyFields = removeEmptyFields;
+var startFile = function (name, recordCounters) {
+    fs.writeFileSync("./".concat(name, ".json"), '[\n', 'utf8');
+    recordCounters[name] = 0;
+};
+exports.startFile = startFile;
+var endFile = function (name) {
+    fs.appendFileSync("./".concat(name, ".json"), '\n]', 'utf8');
+};
+exports.endFile = endFile;
+var writeRecord = function (name, doc, recordCounters) {
+    fs.appendFileSync("./".concat(name, ".json"), (recordCounters[name] > 0 ? ',\n' : '') + JSON.stringify(doc, null, 2), 'utf8');
+    recordCounters[name]++;
+};
+exports.writeRecord = writeRecord;
