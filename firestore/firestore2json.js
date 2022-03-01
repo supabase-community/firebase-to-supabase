@@ -36,16 +36,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.writeRecord = exports.endFile = exports.startFile = void 0;
 var utils_1 = require("./utils");
-exports.startFile = utils_1.startFile;
-exports.endFile = utils_1.endFile;
-exports.writeRecord = utils_1.writeRecord;
 var fs = require("fs");
 var args = process.argv.slice(2);
-var subprocess;
-if (fs.existsSync("./".concat(args[0], ".js"))) {
-    subprocess = require("./".concat(args[0], ".js"));
+var startFunction, endFunction, processDocument;
+if (fs.existsSync("./".concat(args[0], "_startFunction.js"))) {
+    // read file to string
+    startFunction = fs.readFileSync("./".concat(args[0], "_startFunction.js"), 'utf8');
+}
+if (fs.existsSync("./".concat(args[0], "_endFunction.js"))) {
+    // read file to string
+    endFunction = fs.readFileSync("./".concat(args[0], "_endFunction.js"), 'utf8');
+}
+if (fs.existsSync("./".concat(args[0], "_processDocument.js"))) {
+    // read file to string
+    processDocument = fs.readFileSync("./".concat(args[0], "_processDocument.js"), 'utf8');
 }
 var db;
 var recordCounters = {};
@@ -69,8 +74,8 @@ function main(collectionName, batchSize, limit) {
                     return [3 /*break*/, 3];
                 case 1:
                     (0, utils_1.startFile)(collectionName, recordCounters);
-                    if (subprocess && subprocess.startFunction) {
-                        subprocess.startFunction(collectionName, recordCounters);
+                    if (startFunction) {
+                        eval(startFunction);
                     }
                     return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
                 case 2:
@@ -96,8 +101,8 @@ function getAll(collectionName, offset, batchSize, limit) {
                     return [3 /*break*/, 4];
                 case 3:
                     (0, utils_1.endFile)(collectionName);
-                    if (subprocess && subprocess.endFunction) {
-                        subprocess.endFunction(collectionName);
+                    if (endFunction) {
+                        eval(endFunction);
                     }
                     console.log("".concat(recordCounters[collectionName], " records written to ").concat(collectionName, ".json"));
                     _b.label = 4;
@@ -125,21 +130,21 @@ function getBatch(collectionName, offset, batchSize, limit) {
                             .offset(offset)
                             .get()
                             .then(function (snapshot) {
-                            snapshot.forEach(function (doc) {
-                                var item = doc.data();
-                                if (!item.firestore_id)
-                                    item.firestore_id = doc.id;
-                                else if (!item.firestoreid)
-                                    item.firestoreid = doc.id;
-                                else if (!item.original_id)
-                                    item.original_id = doc.id;
-                                else if (!item.originalid)
-                                    item.originalid = doc.id;
-                                if (subprocess) {
-                                    item = subprocess.processDocument(item, recordCounters);
+                            snapshot.forEach(function (fsdoc) {
+                                var doc = fsdoc.data();
+                                if (!doc.firestore_id)
+                                    doc.firestore_id = fsdoc.id;
+                                else if (!doc.firestoreid)
+                                    doc.firestoreid = fsdoc.id;
+                                else if (!doc.original_id)
+                                    doc.original_id = fsdoc.id;
+                                else if (!doc.originalid)
+                                    doc.originalid = fsdoc.id;
+                                if (processDocument) {
+                                    eval(processDocument);
                                 }
-                                (0, utils_1.writeRecord)(collectionName, item, recordCounters);
-                                data.push(item);
+                                (0, utils_1.writeRecord)(collectionName, doc, recordCounters);
+                                data.push(doc);
                             });
                         })["catch"](function (err) {
                             error = err;
@@ -151,3 +156,4 @@ function getBatch(collectionName, offset, batchSize, limit) {
         });
     });
 }
+// export { startFile, endFile, writeRecord };

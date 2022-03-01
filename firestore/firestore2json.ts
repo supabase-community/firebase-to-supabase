@@ -1,11 +1,19 @@
 import { getFirestoreInstance, startFile, endFile, writeRecord } from './utils';
 import * as fs from 'fs';
 const args = process.argv.slice(2);
-let subprocess;
-if (fs.existsSync(`./${args[0]}.js`)) {
-    subprocess = require(`./${args[0]}.js`);
+let startFunction, endFunction, processDocument;
+if (fs.existsSync(`./${args[0]}_startFunction.js`)) {
+    // read file to string
+    startFunction = fs.readFileSync(`./${args[0]}_startFunction.js`, 'utf8');
 }
-
+if (fs.existsSync(`./${args[0]}_endFunction.js`)) {
+    // read file to string
+    endFunction = fs.readFileSync(`./${args[0]}_endFunction.js`, 'utf8');
+}
+if (fs.existsSync(`./${args[0]}_processDocument.js`)) {
+    // read file to string
+    processDocument = fs.readFileSync(`./${args[0]}_processDocument.js`, 'utf8');
+}
 let db;
 
 const recordCounters = {};
@@ -25,12 +33,11 @@ async function main(collectionName: string, batchSize: string, limit: string) {
         process.exit(1);
     } else {
         startFile(collectionName, recordCounters);
-        if (subprocess && subprocess.startFunction) {
-            subprocess.startFunction(collectionName, recordCounters);
+        if (startFunction) {
+            eval(startFunction);
         }
         await getAll(collectionName, 0, parseInt(batchSize), parseInt(limit));
-    }
-    
+    }    
 }
 
 async function getAll(collectionName: string, offset: number, batchSize: number, limit: number) {
@@ -39,8 +46,8 @@ async function getAll(collectionName: string, offset: number, batchSize: number,
         await getAll(collectionName, offset + data.length, batchSize, limit);
     } else {
         endFile(collectionName);
-        if (subprocess && subprocess.endFunction) {
-            subprocess.endFunction(collectionName);
+        if (endFunction) {
+            eval(endFunction);
         }
         console.log(`${recordCounters[collectionName]} records written to ${collectionName}.json`);
     }
@@ -60,23 +67,23 @@ async function getBatch(collectionName: string, offset: number, batchSize: numbe
     .offset(offset)
     .get()
     .then(snapshot => {
-      snapshot.forEach(doc => {
-        let item = doc.data();
-        if (!item.firestore_id) item.firestore_id = doc.id;
-        else if (!item.firestoreid) item.firestoreid = doc.id;   
-        else if (!item.original_id) item.original_id = doc.id;
-        else if (!item.originalid) item.originalid = doc.id;
-        if (subprocess) {
-            item = subprocess.processDocument(item, recordCounters);
+      snapshot.forEach(fsdoc => {
+        let doc = fsdoc.data();
+        if (!doc.firestore_id) doc.firestore_id = fsdoc.id;
+        else if (!doc.firestoreid) doc.firestoreid = fsdoc.id;   
+        else if (!doc.original_id) doc.original_id = fsdoc.id;
+        else if (!doc.originalid) doc.originalid = fsdoc.id;
+        if (processDocument) {
+            eval(processDocument);
         }
-        writeRecord(collectionName, item, recordCounters);
-        data.push(item);
+        writeRecord(collectionName, doc, recordCounters);
+        data.push(doc);
       });
     })
     .catch(err => {
         error = err;
     });
-    return {data, error };        
+    return {data, error};        
 }
 
-export { startFile, endFile, writeRecord };
+// export { startFile, endFile, writeRecord };
