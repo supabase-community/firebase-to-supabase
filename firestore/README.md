@@ -31,10 +31,11 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
 `node collections.js`
 
 #### Dump Firestore collection to JSON file
-`node firestore2json.js <collectionName> [<batchSize>]`
+`node firestore2json.js <collectionName> [<batchSize>] [<limit>]`
 
 * `batchSize` defaults to 1000
 * output filename is `<collectionName>.json`
+* `limit` defaults to 0 (no limit)
 
 #### Import JSON file to Supabase (PostgreSQL)
 
