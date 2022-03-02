@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.writeRecord = exports.endFile = exports.startFile = exports.getFirestoreInstance = exports.removeEmptyFields = void 0;
+exports.writeRecord = exports.cleanUp = exports.getFirestoreInstance = exports.removeEmptyFields = void 0;
 var admin = require("firebase-admin");
 var fs = require("fs");
 var serviceAccount = require("./firebase-service.json");
@@ -28,16 +28,16 @@ function removeEmptyFields(obj) {
     });
 }
 exports.removeEmptyFields = removeEmptyFields;
-var startFile = function (name, recordCounters) {
-    fs.writeFileSync("./".concat(name, ".json"), '[\n', 'utf8');
-    recordCounters[name] = 0;
+var cleanUp = function (recordCounters) {
+    for (var key in recordCounters) {
+        fs.appendFileSync("./".concat(key, ".json"), '\n]', 'utf8');
+    }
 };
-exports.startFile = startFile;
-var endFile = function (name) {
-    fs.appendFileSync("./".concat(name, ".json"), '\n]', 'utf8');
-};
-exports.endFile = endFile;
+exports.cleanUp = cleanUp;
 var writeRecord = function (name, doc, recordCounters) {
+    if (!recordCounters[name] || recordCounters[name] === 0) {
+        fs.appendFileSync("./".concat(name, ".json"), '[\n', 'utf8');
+    }
     fs.appendFileSync("./".concat(name, ".json"), (recordCounters[name] > 0 ? ',\n' : '') + JSON.stringify(doc, null, 2), 'utf8');
     recordCounters[name]++;
 };

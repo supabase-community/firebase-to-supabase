@@ -39,15 +39,7 @@ exports.__esModule = true;
 var utils_1 = require("./utils");
 var fs = require("fs");
 var args = process.argv.slice(2);
-var startFunction, endFunction, processDocument;
-if (fs.existsSync("./".concat(args[0], "_startFunction.js"))) {
-    // read file to string
-    startFunction = fs.readFileSync("./".concat(args[0], "_startFunction.js"), 'utf8');
-}
-if (fs.existsSync("./".concat(args[0], "_endFunction.js"))) {
-    // read file to string
-    endFunction = fs.readFileSync("./".concat(args[0], "_endFunction.js"), 'utf8');
-}
+var processDocument;
 if (fs.existsSync("./".concat(args[0], "_processDocument.js"))) {
     // read file to string
     processDocument = fs.readFileSync("./".concat(args[0], "_processDocument.js"), 'utf8');
@@ -72,12 +64,7 @@ function main(collectionName, batchSize, limit) {
                     console.log("".concat(collectionName, ".json already exists, aborting..."));
                     process.exit(1);
                     return [3 /*break*/, 3];
-                case 1:
-                    (0, utils_1.startFile)(collectionName, recordCounters);
-                    if (startFunction) {
-                        eval(startFunction);
-                    }
-                    return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
+                case 1: return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
                 case 2:
                     _a.sent();
                     _a.label = 3;
@@ -88,7 +75,7 @@ function main(collectionName, batchSize, limit) {
 }
 function getAll(collectionName, offset, batchSize, limit) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, data, error;
+        var _a, data, error, key;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0: return [4 /*yield*/, getBatch(collectionName, offset, batchSize, limit)];
@@ -100,11 +87,10 @@ function getAll(collectionName, offset, batchSize, limit) {
                     _b.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    (0, utils_1.endFile)(collectionName);
-                    if (endFunction) {
-                        eval(endFunction);
+                    (0, utils_1.cleanUp)(recordCounters);
+                    for (key in recordCounters) {
+                        console.log("".concat(recordCounters[key], " records written to ").concat(key, ".json"));
                     }
-                    console.log("".concat(recordCounters[collectionName], " records written to ").concat(collectionName, ".json"));
                     _b.label = 4;
                 case 4: return [2 /*return*/];
             }
@@ -121,6 +107,9 @@ function getBatch(collectionName, offset, batchSize, limit) {
                     error = null;
                     if (recordCounters[collectionName] >= limit) {
                         return [2 /*return*/, { data: data, error: error }];
+                    }
+                    if (typeof recordCounters[collectionName] === 'undefined') {
+                        recordCounters[collectionName] = 0;
                     }
                     if (limit > 0) {
                         batchSize = Math.min(batchSize, limit - recordCounters[collectionName]);
@@ -156,4 +145,3 @@ function getBatch(collectionName, offset, batchSize, limit) {
         });
     });
 }
-// export { startFile, endFile, writeRecord };
