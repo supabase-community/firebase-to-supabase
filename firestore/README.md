@@ -37,6 +37,34 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
 * output filename is `<collectionName>.json`
 * `limit` (optional) defaults to 0 (no limit)
 
+##### HOOKS: Customizing the JSON
+
+You can customize the way your JSON file is written using a custom hook.  A common use for this is to "flatten" the JSON file, or to split nested data into separate, related database tables.
+
+For example, you could take a Firestore document that looks like this:
+
+```json
+[{ "user": "mark",
+  "score": 100,
+  "items": ["hammer","nail","glue"]
+}]
+```
+into two files (one table for users, the other table for items):
+
+Table: **users**
+```json
+[{ "user": "mark",
+  "score": 100
+}]
+```
+and Table: **items**
+```json
+[{ "user": "mark",
+   "items": ["hammer","nail","glue"]
+}]
+```
+See: [HOOKS.md](./HOOKS.md).
+
 #### Import JSON file to Supabase (PostgreSQL)
 
 `node json2supabase.js <path_to_json_file> [<primary_key_strategy>] [<primary_key_name>]`

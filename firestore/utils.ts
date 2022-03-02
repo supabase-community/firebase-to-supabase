@@ -37,9 +37,10 @@ const cleanUp = (recordCounters: any ) => {
 }
 const writeRecord = (name: string, doc: any, recordCounters: any) => {
   if (!recordCounters[name] || recordCounters[name] === 0) {
-    fs.appendFileSync(`./${name}.json`, 
+    fs.writeFileSync(`./${name}.json`, 
     '[\n', 
-    'utf8');      
+    'utf8');
+    recordCounters[name] = 0;   
   }
   fs.appendFileSync(`./${name}.json`, 
       (recordCounters[name] > 0 ? ',\n' : '') + JSON.stringify(doc, null, 2), 

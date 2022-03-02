@@ -3,9 +3,9 @@ import * as fs from 'fs';
 const args = process.argv.slice(2);
 
 let processDocument;
-if (fs.existsSync(`./${args[0]}_processDocument.js`)) {
+if (fs.existsSync(`./${args[0]}.js`)) {
     // read file to string
-    processDocument = fs.readFileSync(`./${args[0]}_processDocument.js`, 'utf8');
+    processDocument = require(`./${args[0]}.js`);
 }
 
 let db;
@@ -23,12 +23,12 @@ if (args.length < 1) {
 
 
 async function main(collectionName: string, batchSize: string, limit: string) {
-    if (fs.existsSync(`./${collectionName}.json`)) {
-        console.log(`${collectionName}.json already exists, aborting...`);
-        process.exit(1);
-    } else {
+    // if (fs.existsSync(`./${collectionName}.json`)) {
+    //     console.log(`${collectionName}.json already exists, aborting...`);
+    //     process.exit(1);
+    // } else {
         await getAll(collectionName, 0, parseInt(batchSize), parseInt(limit));
-    }    
+    // }    
 }
 
 async function getAll(collectionName: string, offset: number, batchSize: number, limit: number) {
@@ -66,8 +66,9 @@ async function getBatch(collectionName: string, offset: number, batchSize: numbe
         else if (!doc.firestoreid) doc.firestoreid = fsdoc.id;   
         else if (!doc.original_id) doc.original_id = fsdoc.id;
         else if (!doc.originalid) doc.originalid = fsdoc.id;
+        console.log('processDocument', typeof processDocument);
         if (processDocument) {
-            eval(processDocument);
+            doc = processDocument(collectionName, doc, recordCounters, writeRecord);
         }
         writeRecord(collectionName, doc, recordCounters);
         data.push(doc);

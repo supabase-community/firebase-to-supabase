@@ -42,7 +42,8 @@ var args = process.argv.slice(2);
 var processDocument;
 if (fs.existsSync("./".concat(args[0], "_processDocument.js"))) {
     // read file to string
-    processDocument = fs.readFileSync("./".concat(args[0], "_processDocument.js"), 'utf8');
+    processDocument = require("./".concat(args[0], "_processDocument.js"));
+    // processDocument = fs.readFileSync(`./${args[0]}_processDocument.js`, 'utf8');
 }
 var db;
 var recordCounters = {};
@@ -59,16 +60,19 @@ function main(collectionName, batchSize, limit) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    if (!fs.existsSync("./".concat(collectionName, ".json"))) return [3 /*break*/, 1];
-                    console.log("".concat(collectionName, ".json already exists, aborting..."));
-                    process.exit(1);
-                    return [3 /*break*/, 3];
-                case 1: return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
-                case 2:
+                case 0: 
+                // if (fs.existsSync(`./${collectionName}.json`)) {
+                //     console.log(`${collectionName}.json already exists, aborting...`);
+                //     process.exit(1);
+                // } else {
+                return [4 /*yield*/, getAll(collectionName, 0, parseInt(batchSize), parseInt(limit))];
+                case 1:
+                    // if (fs.existsSync(`./${collectionName}.json`)) {
+                    //     console.log(`${collectionName}.json already exists, aborting...`);
+                    //     process.exit(1);
+                    // } else {
                     _a.sent();
-                    _a.label = 3;
-                case 3: return [2 /*return*/];
+                    return [2 /*return*/];
             }
         });
     });
@@ -129,8 +133,9 @@ function getBatch(collectionName, offset, batchSize, limit) {
                                     doc.original_id = fsdoc.id;
                                 else if (!doc.originalid)
                                     doc.originalid = fsdoc.id;
+                                console.log('processDocument', typeof processDocument);
                                 if (processDocument) {
-                                    eval(processDocument);
+                                    doc = processDocument(collectionName, doc, recordCounters, utils_1.writeRecord);
                                 }
                                 (0, utils_1.writeRecord)(collectionName, doc, recordCounters);
                                 data.push(doc);

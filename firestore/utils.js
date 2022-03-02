@@ -36,7 +36,8 @@ var cleanUp = function (recordCounters) {
 exports.cleanUp = cleanUp;
 var writeRecord = function (name, doc, recordCounters) {
     if (!recordCounters[name] || recordCounters[name] === 0) {
-        fs.appendFileSync("./".concat(name, ".json"), '[\n', 'utf8');
+        fs.writeFileSync("./".concat(name, ".json"), '[\n', 'utf8');
+        recordCounters[name] = 0;
     }
     fs.appendFileSync("./".concat(name, ".json"), (recordCounters[name] > 0 ? ',\n' : '') + JSON.stringify(doc, null, 2), 'utf8');
     recordCounters[name]++;
