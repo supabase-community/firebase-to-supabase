@@ -60,8 +60,11 @@ Table: **users**
 and Table: **items**
 ```json
 [{ "user": "mark",
-   "items": ["hammer","nail","glue"]
-}]
+   "item": "hammer"},
+ {"user": "mark",
+   "item": "nail"},
+ {"user": "mark",
+ "item": "glue"}]
 ```
 See: [HOOKS.md](./HOOKS.md).
 
