@@ -76,8 +76,8 @@ See: [HOOKS.md](./HOOKS.md).
 `), such as `./my_collection.json`
 * `[<primary_key_strategy>]` (optional) is one of:
     * `none` (the default) (no primary key is added to the table)
-    * `serial` creates a key using `(id SERIAL PRIMARY KEY)` (autoincrementing 2-byte integer)
-    * `smallserial` creates a key using `(id SMALLSERIAL PRIMARY KEY)` (autoincrementing 4-byte integer)
+    * `serial` creates a key using `(id SMALLSERIAL PRIMARY KEY)` (autoincrementing 2-byte integer)
+    * `smallserial` creates a key using `(id SERIAL PRIMARY KEY)` (autoincrementing 4-byte integer)
     * `bigserial` creates a key using `(id BIGSERIAL PRIMARY KEY)` (autoincrementing 8-byte integer)
     * `uuid` creates a key using `(id UUID PRIMARY KEY DEFAULT uuid_generate_v4())` (randomly generated uuid)
     * `firestore_id` creates a key using `(id TEXT PRIMARY KEY)` (uses existing firestore_id random text as key)
