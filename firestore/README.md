@@ -36,6 +36,7 @@ The Firestore `collection` is "flattened", and converted to a table with basic c
 * `batchSize` (optional) defaults to 1000
 * output filename is `<collectionName>.json`
 * `limit` (optional) defaults to 0 (no limit)
+* **note:** `<collectionName>` is just the name of the collection (do not add .json at the end of this on the command line
 
 ##### HOOKS: Customizing the JSON
 
