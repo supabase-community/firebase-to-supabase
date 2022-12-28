@@ -34,6 +34,13 @@ This module automates the process of converting auth users from a Firebase proje
     * enter the password you used when you created your Supabase project in the `password` entry in the `supabase-service.json` file
     * save the `supabase-service.json` file
 
+#### Install dependencies
+You'll need to install the `firebase-admin` dependency:
+
+```bash
+npm install firebase-admin
+```
+
 #### Save your Firebase Password Hash Parameters
 * log into your Firebase Console
 * open your project
