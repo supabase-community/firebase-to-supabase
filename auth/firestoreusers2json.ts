@@ -44,6 +44,7 @@ async function listUsers(
             count++;
         });
         if (usersFound.pageToken) {
+            fs.appendFileSync(filename, ',', 'utf-8');
             listUsers(filename, batchSize, usersFound.pageToken);
         } else {
             fs.appendFileSync(filename, ']\n', 'utf-8');
