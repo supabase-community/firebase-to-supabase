@@ -141,6 +141,7 @@ function getBatch(collectionName, offset, batchSize, limit) {
                                 data.push(doc);
                             });
                         })["catch"](function (err) {
+                            console.error('error: ', err);
                             error = err;
                         })];
                 case 1:
