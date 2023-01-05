@@ -40,10 +40,10 @@ var utils_1 = require("./utils");
 var fs = require("fs");
 var args = process.argv.slice(2);
 var processDocument;
-if (fs.existsSync("./".concat(args[0], "_processDocument.js"))) {
+if (fs.existsSync("./".concat(args[0], ".js"))) {
     // read file to string
-    processDocument = require("./".concat(args[0], "_processDocument.js"));
-    // processDocument = fs.readFileSync(`./${args[0]}_processDocument.js`, 'utf8');
+    processDocument = require("./".concat(args[0], ".js"));
+    // processDocument = fs.readFileSync(`./${args[0]}.js`, 'utf8');
 }
 var db;
 var recordCounters = {};
