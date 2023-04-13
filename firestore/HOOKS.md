@@ -37,7 +37,7 @@ The parameters passed to your hook are:
 ##### Add a new (unique) numeric key to a collection
 ```js
 module.exports = (collectionName, doc, recordCounters, writeRecord) => {
-  doc.unique_key = (recordCounter[collectionName] + 1);
+  doc.unique_key = (recordCounters[collectionName] + 1);
   return doc;
 }
 ```
