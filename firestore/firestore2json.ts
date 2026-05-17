@@ -75,6 +75,7 @@ async function getBatch(collectionName: string, offset: number, batchSize: numbe
       });
     })
     .catch(err => {
+        console.error('error: ', err);
         error = err;
     });
     return {data, error};        
